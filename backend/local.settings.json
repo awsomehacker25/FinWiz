@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "COSMOS_DB_URI": "your-cosmos-db-uri",
+    "COSMOS_DB_KEY": "your-cosmos-db-key",
+    "COSMOS_DB_DATABASE": "your-database-name",
+    "NOTIFICATION_HUB_CONNECTION_STRING": "your-connection-string",
+    "NOTIFICATION_HUB_NAME": "your-hub-name"
+  }
+} 

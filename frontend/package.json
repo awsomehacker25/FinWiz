@@ -1,0 +1,26 @@
+{
+  "name": "FinanceAI",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start"
+  },
+  "dependencies": {
+    "@react-navigation/native": "^6.1.7",
+    "@react-navigation/stack": "^6.3.21",
+    "axios": "^1.6.7",
+    "expo": "^53.0.19",
+    "expo-localization": "~16.1.6",
+    "expo-secure-store": "~14.2.3",
+    "i18next": "^23.10.1",
+    "intl-pluralrules": "^2.0.1",
+    "react": "19.0.0",
+    "react-i18next": "^13.2.2",
+    "react-native": "0.79.5",
+    "react-native-dotenv": "2.5.4",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1"
+  }
+}
