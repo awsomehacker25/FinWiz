@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, Button, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -8,6 +8,7 @@ export default function SupportCommunityScreen() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [editingThread, setEditingThread] = useState(null);
   const { user } = useContext(AuthContext);
 
   const processThreadData = (thread) => ({
@@ -20,19 +21,22 @@ export default function SupportCommunityScreen() {
   });
 
   useEffect(() => {
-    api.get('/community')
-      .then(res => {
-        const data = Array.isArray(res?.data) ? res.data : [];
-        const processedThreads = data
-          .map(processThreadData)
-          .filter(thread => thread.id && thread.title);
-        setThreads(processedThreads);
-      })
-      .catch(err => {
-        console.error(err);
-        setThreads([]);
-      });
+    loadThreads();
   }, []);
+
+  const loadThreads = async () => {
+    try {
+      const res = await api.get('/community');
+      const data = Array.isArray(res?.data) ? res.data : [];
+      const processedThreads = data
+        .map(processThreadData)
+        .filter(thread => thread.id && thread.title);
+      setThreads(processedThreads);
+    } catch (err) {
+      console.error(err);
+      setThreads([]);
+    }
+  };
 
   const addThread = async () => {
     if (!title || !body || !user) return;
@@ -47,46 +51,150 @@ export default function SupportCommunityScreen() {
     try {
       await api.post('/community', newThread);
       setThreads(prevThreads => [newThread, ...prevThreads]);
-      setTitle('');
-      setBody('');
-      setIsCreating(false);
+      resetForm();
     } catch (err) {
       console.error(err);
+      Alert.alert('Error', 'Failed to create thread');
     }
+  };
+
+  const startEditing = (thread) => {
+    setEditingThread(thread);
+    setTitle(thread.title);
+    setBody(thread.body);
+    setIsCreating(true);
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setBody('');
+    setIsCreating(false);
+    setEditingThread(null);
+  };
+
+  const updateThread = async () => {
+    if (!editingThread || !title || !body) return;
+
+    const updatedThread = {
+      ...editingThread,
+      title: title.trim(),
+      body: body.trim(),
+    };
+
+    try {
+      await api.put(`/community/${editingThread.id}`, updatedThread);
+      setThreads(prevThreads =>
+        prevThreads.map(thread =>
+          thread.id === editingThread.id ? updatedThread : thread
+        )
+      );
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to update thread');
+    }
+  };
+
+  const deleteThread = async (thread) => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this thread?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/community/${thread.id}`);
+              setThreads(prevThreads =>
+                prevThreads.filter(t => t.id !== thread.id)
+              );
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Error', 'Failed to delete thread');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Support & Community</Text>
       
-      {isCreating ? (
-        <View style={styles.createThreadContainer}>
-          <Text style={styles.subtitle}>Create New Thread</Text>
+      {!isCreating ? (
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => setIsCreating(true)}
+        >
+          <Text style={styles.createButtonText}>Start New Discussion</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            {editingThread ? 'Edit Discussion' : 'Start New Discussion'}
+          </Text>
           <TextInput
             style={[styles.input, styles.titleInput]}
-            placeholder="What's on your mind?"
+            placeholder="Title"
             value={title}
             onChangeText={setTitle}
             placeholderTextColor="#666"
           />
           <TextInput
             style={[styles.input, styles.bodyInput]}
-            placeholder="Thread Body"
+            placeholder="Share your thoughts..."
             value={body}
             onChangeText={setBody}
             multiline
             numberOfLines={4}
+            placeholderTextColor="#666"
           />
           <View style={styles.buttonContainer}>
-            <Button title="Post Thread" onPress={addThread} />
-            <Button title="Cancel" onPress={() => setIsCreating(false)} color="gray" />
+            {editingThread ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.button, styles.updateButton]}
+                  onPress={updateThread}
+                >
+                  <Text style={styles.buttonText}>Update</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={resetForm}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.button, styles.postButton]}
+                  onPress={addThread}
+                >
+                  <Text style={styles.buttonText}>Post</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setIsCreating(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
-      ) : (
-        <Button
-          title="Create New Thread"
-          onPress={() => setIsCreating(true)}
-        />
       )}
 
       <FlatList
@@ -94,29 +202,38 @@ export default function SupportCommunityScreen() {
         data={threads}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.threadCard} activeOpacity={0.7}>
-            <Text style={styles.threadTitle}>{item.title}</Text>
-            <Text style={styles.threadBody} numberOfLines={3}>{item.body}</Text>
-            <View style={styles.threadFooter}>
-              <View style={styles.metaContainer}>
-                <Text style={styles.authorText}>
-                  By: {item.userId}
+          <View style={styles.threadCard}>
+            <View style={styles.threadHeader}>
+              <View style={styles.threadMeta}>
+                <Text style={styles.threadDate}>
+                  {formatDate(item.createdAt)}
                 </Text>
-                <Text style={styles.dotSeparator}>•</Text>
-                <Text style={styles.dateText}>
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </Text>
+                {item.userId === user?.id && (
+                  <View style={styles.threadActions}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.editButton]}
+                      onPress={() => startEditing(item)}
+                    >
+                      <Text style={styles.actionButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.deleteButton]}
+                      onPress={() => deleteThread(item)}
+                    >
+                      <Text style={styles.actionButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
-              <View style={styles.replyBadge}>
-                <Text style={styles.replyCount}>
-                  {item.replies?.length || 0}
-                </Text>
-                <Text style={styles.replyLabel}>
-                  {(item.replies?.length || 0) === 1 ? 'reply' : 'replies'}
-                </Text>
-              </View>
+              <Text style={styles.threadTitle}>{item.title}</Text>
+              <Text style={styles.threadBody}>{item.body}</Text>
             </View>
-          </TouchableOpacity>
+            <View style={styles.threadFooter}>
+              <Text style={styles.replyCount}>
+                {item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'}
+              </Text>
+            </View>
+          </View>
         )}
       />
     </View>
@@ -126,124 +243,154 @@ export default function SupportCommunityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16,
     color: '#2c3e50',
   },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#34495e',
-  },
-  createThreadContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 20,
+  createButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
     borderRadius: 12,
-    marginBottom: 20,
+    alignItems: 'center',
+    marginBottom: 16,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#2c3e50',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 12,
-    backgroundColor: '#fff',
+    padding: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    marginBottom: 8,
   },
   titleInput: {
-    height: 45,
-    fontSize: 16,
+    fontWeight: '500',
   },
   bodyInput: {
     height: 120,
     textAlignVertical: 'top',
-    paddingTop: 12,
-    fontSize: 16,
-    lineHeight: 24,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
     marginTop: 8,
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  postButton: {
+    backgroundColor: '#4CAF50',
+  },
+  updateButton: {
+    backgroundColor: '#2196F3',
+  },
+  cancelButton: {
+    backgroundColor: '#9e9e9e',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   list: {
     flex: 1,
   },
   threadCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
+    backgroundColor: 'white',
     borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    padding: 16,
+    marginBottom: 8,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 2,
+  },
+  threadHeader: {
+    gap: 8,
+  },
+  threadMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  threadDate: {
+    color: '#666',
+    fontSize: 14,
+  },
+  threadActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  editButton: {
+    backgroundColor: '#2196F3',
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
   },
   threadTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
     color: '#2c3e50',
   },
   threadBody: {
-    color: '#4a4a4a',
-    marginBottom: 12,
-    lineHeight: 20,
-    fontSize: 15,
+    fontSize: 16,
+    color: '#34495e',
+    lineHeight: 22,
   },
   threadFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  authorText: {
-    color: '#666',
-    fontSize: 13,
-  },
-  dotSeparator: {
-    color: '#666',
-    marginHorizontal: 6,
-    fontSize: 13,
-  },
-  dateText: {
-    color: '#666',
-    fontSize: 13,
-  },
-  replyBadge: {
-    backgroundColor: '#e8f5e9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
   },
   replyCount: {
-    color: '#4caf50',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  replyLabel: {
-    color: '#4caf50',
-    fontSize: 13,
+    color: '#666',
+    fontSize: 14,
   },
 });
