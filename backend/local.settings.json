@@ -3,9 +3,9 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "COSMOS_DB_URI": "your-cosmos-db-uri",
-    "COSMOS_DB_KEY": "your-cosmos-db-key",
-    "COSMOS_DB_DATABASE": "your-database-name",
+    "COSMOS_DB_URI": "https://paldes.documents.azure.com:443/",
+    "COSMOS_DB_KEY": "UIFQubUAFkIOA1ze3Pkhf2j5RqDU4oMjoELYNXptzCcuIuzn9AyFzycpcWhiwL7moRfYqaVdZlJZACDbJrIkZQ==",
+    "COSMOS_DB_DATABASE": "FinanceAI",
     "NOTIFICATION_HUB_CONNECTION_STRING": "your-connection-string",
     "NOTIFICATION_HUB_NAME": "your-hub-name"
   }
