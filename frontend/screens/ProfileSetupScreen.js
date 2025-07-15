@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { AuthContext } from '../context/AuthContext';
 
 const ProfileSetupScreen = ({ navigation }) => {
+  const { user } = useContext(AuthContext);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState({
-    name: '',
+    phoneNumber: '',
     age: '',
     occupation: '',
     visaStatus: 'student',
     preferredLanguage: 'english',
+    educationLevel: 'bachelors',
     monthlyIncome: '',
     financialGoals: [],
     experience: 'beginner'
   });
+
+  // Pre-fill name if user data is available from sign-up
+  useEffect(() => {
+    if (user && user.firstName && user.lastName) {
+      // Name is already collected in sign-up, no need to pre-fill here
+    }
+  }, [user]);
 
   const financialGoalOptions = [
     'Save for Emergency Fund',
@@ -46,6 +56,16 @@ const ProfileSetupScreen = ({ navigation }) => {
     { label: 'Hindi', value: 'hindi' }
   ];
 
+  const educationOptions = [
+    { label: 'High School', value: 'high_school' },
+    { label: 'College', value: 'college' },
+    { label: 'Associate\'s Degree', value: 'associates' },
+    { label: 'Bachelor\'s Degree', value: 'bachelors' },
+    { label: 'Master\'s Degree', value: 'masters' },
+    { label: 'Doctorate', value: 'doctorate' },
+    { label: 'Other', value: 'other' }
+  ];
+
   const toggleGoal = (goal) => {
     setProfile(prev => ({
       ...prev,
@@ -61,8 +81,8 @@ const ProfileSetupScreen = ({ navigation }) => {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!profile.name) {
-        Alert.alert('Required Field', 'Please enter your name');
+      if (!profile.age) {
+        Alert.alert('Required Field', 'Please enter your age');
         return;
       }
     }
@@ -91,17 +111,7 @@ const ProfileSetupScreen = ({ navigation }) => {
     <View style={styles.step}>
       <Text style={styles.stepTitle}>Basic Information</Text>
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          value={profile.name}
-          onChangeText={(text) => setProfile({ ...profile, name: text })}
-          placeholder="Enter your name"
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Age (Optional)</Text>
+        <Text style={styles.label}>Age *</Text>
         <TextInput
           style={styles.input}
           value={profile.age}
@@ -109,6 +119,37 @@ const ProfileSetupScreen = ({ navigation }) => {
           placeholder="Enter your age"
           keyboardType="numeric"
         />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Phone Number (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={profile.phoneNumber}
+          onChangeText={(text) => setProfile({ ...profile, phoneNumber: text })}
+          placeholder="Enter your phone number"
+          keyboardType="phone-pad"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Education Level</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={profile.educationLevel}
+            onValueChange={(value) => setProfile(prev => ({ ...prev, educationLevel: value }))}
+            style={[styles.picker, Platform.OS === 'ios' && styles.pickerIOS]}
+            itemStyle={Platform.OS === 'ios' ? styles.pickerItemIOS : {}}
+          >
+            {educationOptions.map((option) => (
+              <Picker.Item 
+                key={option.value} 
+                label={option.label} 
+                value={option.value}
+              />
+            ))}
+          </Picker>
+        </View>
       </View>
 
       <View style={styles.inputGroup}>
@@ -285,6 +326,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 24,
+    paddingTop: 40,
   },
   title: {
     fontSize: 24,

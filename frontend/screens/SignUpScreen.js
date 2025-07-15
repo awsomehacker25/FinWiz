@@ -3,11 +3,16 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView,
 import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 
-export default function LoginScreen({ navigation }) {
+export default function SignUpScreen({ navigation }) {
   const { login } = useContext(AuthContext);
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [loading, setLoading] = useState(false);
 
   const validateEmail = (email) => {
@@ -15,29 +20,48 @@ export default function LoginScreen({ navigation }) {
     return emailRegex.test(email);
   };
 
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const validateForm = () => {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
-      return;
+      return false;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(formData.email)) {
       Alert.alert('Error', 'Please enter a valid email address');
-      return;
+      return false;
     }
 
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
+      return false;
     }
+
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      // TODO: Integrate with Azure AD B2C
-      await login({ email });
-      navigation.replace('Home');
+      // TODO: Integrate with Azure AD B2C for actual registration
+      // For now, we'll simulate a successful registration
+      const userData = {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        isNewUser: true, // Flag to indicate this is a new user
+      };
+      
+      await login(userData);
+      navigation.replace('ProfileSetup');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to login');
+      Alert.alert('Error', error.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -50,22 +74,50 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+
+
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
             <Text style={styles.logoText}>F</Text>
           </View>
           <Text style={styles.appName}>Finance AI</Text>
-          <Text style={styles.tagline}>Your Smart Financial Assistant</Text>
+          <Text style={styles.tagline}>Create Your Account</Text>
         </View>
 
         <View style={styles.form}>
+          <View style={styles.nameRow}>
+            <View style={[styles.inputContainer, styles.halfWidth]}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput 
+                style={styles.input}
+                placeholder="Enter first name"
+                value={formData.firstName}
+                onChangeText={(text) => setFormData({...formData, firstName: text})}
+                autoCapitalize="words"
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={[styles.inputContainer, styles.halfWidth]}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput 
+                style={styles.input}
+                placeholder="Enter last name"
+                value={formData.lastName}
+                onChangeText={(text) => setFormData({...formData, lastName: text})}
+                autoCapitalize="words"
+                placeholderTextColor="#666"
+              />
+            </View>
+          </View>
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput 
               style={styles.input}
               placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(text) => setFormData({...formData, email: text})}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
@@ -77,25 +129,33 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Password</Text>
             <TextInput 
               style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
+              placeholder="Create a password"
+              value={formData.password}
+              onChangeText={(text) => setFormData({...formData, password: text})}
               secureTextEntry
               placeholderTextColor="#666"
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Confirm Password</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
+              secureTextEntry
+              placeholderTextColor="#666"
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
+            style={[styles.signUpButton, loading && styles.signUpButtonDisabled]}
+            onPress={handleSignUp}
             disabled={loading}
           >
-            <Text style={styles.loginButtonText}>
-              {loading ? 'Logging in...' : t('login')}
+            <Text style={styles.signUpButtonText}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Text>
           </TouchableOpacity>
 
@@ -107,14 +167,14 @@ export default function LoginScreen({ navigation }) {
 
           <TouchableOpacity style={styles.socialButton}>
             <Text style={styles.socialIcon}>G</Text>
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
+            <Text style={styles.socialButtonText}>Sign up with Google</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={styles.signUpText}>Sign Up</Text>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginText}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -132,9 +192,9 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
   },
+
   logoContainer: {
     alignItems: 'center',
-    marginTop: 48,
     marginBottom: 48,
   },
   logoCircle: {
@@ -165,8 +225,15 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 32,
   },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   inputContainer: {
     gap: 8,
+  },
+  halfWidth: {
+    flex: 1,
   },
   label: {
     fontSize: 14,
@@ -181,24 +248,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-  },
-  forgotPasswordText: {
-    color: '#2196F3',
-    fontSize: 14,
-  },
-  loginButton: {
+  signUpButton: {
     backgroundColor: '#4CAF50',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
   },
-  loginButtonDisabled: {
+  signUpButtonDisabled: {
     backgroundColor: '#a5d6a7',
   },
-  loginButtonText: {
+  signUpButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
@@ -250,9 +310,9 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
-  signUpText: {
+  loginText: {
     color: '#2196F3',
     fontSize: 14,
     fontWeight: '500',
   },
-});
+}); 

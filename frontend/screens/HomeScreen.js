@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
 export default function HomeScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [summary, setSummary] = useState({
     totalIncome: 0,
     goalProgress: 0,
     lessonsCompleted: 0,
     communityThreads: 0
   });
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
 
   useEffect(() => {
     loadSummaryData();
@@ -54,6 +55,84 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const handleLogout = () => {
+    setProfileModalVisible(false);
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          },
+        },
+      ]
+    );
+  };
+
+  const ProfileSidebar = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={profileModalVisible}
+      onRequestClose={() => setProfileModalVisible(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setProfileModalVisible(false)}
+      >
+        <View style={styles.sidebar}>
+          <View style={styles.sidebarHeader}>
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileInitial}>
+                {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+              </Text>
+            </View>
+            <Text style={styles.profileName}>
+              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}
+            </Text>
+            <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+          </View>
+
+          <View style={styles.sidebarMenu}>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuItemText}>Profile Settings</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuItemText}>Account Security</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuItemText}>Help & Support</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuItemText}>About</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.menuDivider} />
+            
+            <TouchableOpacity style={styles.logoutMenuItem} onPress={handleLogout}>
+              <Text style={styles.logoutMenuItemText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   const DashboardCard = ({ title, value, subtitle, icon, onPress, color }) => (
     <TouchableOpacity style={[styles.card, { borderLeftColor: color }]} onPress={onPress}>
       <View style={styles.cardContent}>
@@ -67,9 +146,22 @@ export default function HomeScreen({ navigation }) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome back,</Text>
-        <Text style={styles.nameText}>{user?.name || 'User'}</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.nameText}>{user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileButton} onPress={() => setProfileModalVisible(true)}>
+            <View style={styles.profileIcon}>
+              <Text style={styles.profileIconText}>
+                {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <ProfileSidebar />
 
       <View style={styles.grid}>
         <DashboardCard
@@ -146,9 +238,109 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
+    paddingTop: 40,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  profileButton: {
+    padding: 4,
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileIconText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  sidebar: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 280,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  sidebarHeader: {
+    padding: 24,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  profileInitial: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: '#666',
+  },
+  sidebarMenu: {
+    padding: 16,
+  },
+  menuItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 16,
+  },
+  logoutMenuItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#fff5f5',
+  },
+  logoutMenuItemText: {
+    fontSize: 16,
+    color: '#f44336',
+    fontWeight: '500',
   },
   welcomeText: {
     fontSize: 16,

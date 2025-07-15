@@ -8,6 +8,7 @@ import i18n from './localization/i18n';
 import AuthProvider from './context/AuthContext';
 import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
+import SignUpScreen from './screens/SignUpScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import IncomeTrackerScreen from './screens/IncomeTrackerScreen';
 import SavingsGoalsScreen from './screens/SavingsGoalsScreen';
@@ -23,9 +24,30 @@ export default function App() {
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Login">
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="SignUp" 
+              component={SignUpScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="ProfileSetup" 
+              component={ProfileSetupScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Home" 
+              component={HomeScreen}
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false,
+                headerLeft: null
+              }}
+            />
             <Stack.Screen name="IncomeTracker" component={IncomeTrackerScreen} />
             <Stack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
             <Stack.Screen name="LiteracyHub" component={LiteracyHubScreen} />
