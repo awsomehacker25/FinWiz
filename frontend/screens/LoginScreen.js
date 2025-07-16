@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 8, // reduced from 40
   },
   logoContainer: {
     alignItems: 'center',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
-    marginBottom: 32,
+    // marginBottom: 32, // removed to reduce space
   },
   inputContainer: {
     gap: 8,
@@ -244,7 +244,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: 24,
+    paddingTop: 16, // reduced from 24
+    paddingBottom: 16, // add a little bottom padding for visibility
   },
   footerText: {
     color: '#666',
