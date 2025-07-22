@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { AuthContext } from '../context/AuthContext';
+import { upsertUserProfile } from '../services/api';
 
 const ProfileSetupScreen = ({ navigation }) => {
   const { user } = useContext(AuthContext);
@@ -79,7 +80,7 @@ const ProfileSetupScreen = ({ navigation }) => {
     setStep(step - 1);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1) {
       if (!profile.age) {
         Alert.alert('Required Field', 'Please enter your age');
@@ -87,8 +88,20 @@ const ProfileSetupScreen = ({ navigation }) => {
       }
     }
     if (step === 3) {
-      handleSubmit();
+      await handleSubmit();
     } else {
+      // Upsert after each step
+      try {
+        await upsertUserProfile({
+          id: user?.email, // Use email as unique id
+          email: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          ...profile
+        });
+      } catch (e) {
+        Alert.alert('Error', e.message || 'Failed to save profile');
+      }
       setStep(step + 1);
     }
   };
@@ -100,10 +113,16 @@ const ProfileSetupScreen = ({ navigation }) => {
         return;
       }
       // API call to save profile
-      // await api.post('/userProfile', profile);
+      await upsertUserProfile({
+        id: user?.email,
+        email: user?.email,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        ...profile
+      });
       navigation.replace('Home');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save profile');
+      Alert.alert('Error', error.message || 'Failed to save profile');
     }
   };
 

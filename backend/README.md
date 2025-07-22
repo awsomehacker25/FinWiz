@@ -21,4 +21,3 @@
 - `api/goals.js` - Savings goals CRUD
 - `api/literacy.js` - Literacy lessons
 - `api/community.js` - Community threads
-- `api/notification.js` - Notification triggers 

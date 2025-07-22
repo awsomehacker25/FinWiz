@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { upsertUserProfile } from '../services/api';
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -57,8 +58,14 @@ export default function SignUpScreen({ navigation }) {
         lastName: formData.lastName,
         isNewUser: true, // Flag to indicate this is a new user
       };
-      
       await login(userData);
+      // Upsert initial profile
+      await upsertUserProfile({
+        id: formData.email, // Use email as unique id for now
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      });
       navigation.replace('ProfileSetup');
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to create account');

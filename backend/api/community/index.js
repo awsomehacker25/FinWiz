@@ -1,10 +1,8 @@
-const { CosmosClient } = require('@azure/cosmos');
-const endpoint = process.env.COSMOS_DB_URI;
-const key = process.env.COSMOS_DB_KEY;
+const { getCosmosClient } = require('../../shared/cosmosClient');
 const databaseId = process.env.COSMOS_DB_DATABASE;
 const containerId = 'communityThreads';
 
-const client = new CosmosClient({ endpoint, key });
+const client = getCosmosClient();
 
 module.exports = async function (context, req) {
   const container = client.database(databaseId).container(containerId);
