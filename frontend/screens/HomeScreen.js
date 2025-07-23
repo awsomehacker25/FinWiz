@@ -20,6 +20,8 @@ export default function HomeScreen({ navigation }) {
   const loadSummaryData = async () => {
     if (user) {
       try {
+        // TEMPORARILY COMMENTED OUT: API calls other than userProfile for review
+        /*
         const [incomeRes, goalsRes, lessonsRes, communityRes] = await Promise.all([
           api.get(`/income?userId=${user.id}`),
           api.get(`/goals?userId=${user.id}`),
@@ -48,6 +50,8 @@ export default function HomeScreen({ navigation }) {
           lessonsCompleted: lessonsRes?.data?.completed || 0,
           communityThreads: Array.isArray(communityRes?.data) ? communityRes.data.length : 0
         });
+        */
+        // Only userProfile logic should remain active for now
       } catch (err) {
         console.error('Error loading summary:', err);
         // Keep the existing values on error

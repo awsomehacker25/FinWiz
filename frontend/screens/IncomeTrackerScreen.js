@@ -40,7 +40,6 @@ export default function IncomeTrackerScreen() {
 
   const addEntry = async () => {
     if (!amount || !source || !user) return;
-    
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount)) return;
 
@@ -51,7 +50,6 @@ export default function IncomeTrackerScreen() {
       date: new Date().toISOString(),
       id: String(Date.now())
     });
-
     try {
       await api.post('/income', newEntry);
       setEntries(prevEntries => [newEntry, ...prevEntries]);
@@ -77,7 +75,6 @@ export default function IncomeTrackerScreen() {
 
   const updateEntry = async () => {
     if (!editingEntry || !amount || !source) return;
-
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount)) return;
 
@@ -86,9 +83,8 @@ export default function IncomeTrackerScreen() {
       amount: parsedAmount,
       source: source.trim(),
     };
-
     try {
-      await api.put(`/income/${editingEntry.id}`, updatedEntry);
+      await api.put(`/income?id=${editingEntry.id}`, updatedEntry);
       setEntries(prevEntries =>
         prevEntries.map(entry =>
           entry.id === editingEntry.id ? updatedEntry : entry
@@ -114,7 +110,7 @@ export default function IncomeTrackerScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/income/${entry.id}`);
+              await api.delete(`/income?id=${entry.id}&userId=${entry.userId}`);
               setEntries(prevEntries =>
                 prevEntries.filter(e => e.id !== entry.id)
               );

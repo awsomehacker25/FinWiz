@@ -26,12 +26,16 @@ export default function SupportCommunityScreen() {
 
   const loadThreads = async () => {
     try {
+      // TEMPORARILY COMMENTED OUT: API call to /community for review
+      /*
       const res = await api.get('/community');
       const data = Array.isArray(res?.data) ? res.data : [];
       const processedThreads = data
         .map(processThreadData)
         .filter(thread => thread.id && thread.title);
       setThreads(processedThreads);
+      */
+      setThreads([]);
     } catch (err) {
       console.error(err);
       setThreads([]);
@@ -48,14 +52,16 @@ export default function SupportCommunityScreen() {
       createdAt: new Date().toISOString(),
       replies: [],
     });
-    try {
-      await api.post('/community', newThread);
-      setThreads(prevThreads => [newThread, ...prevThreads]);
-      resetForm();
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to create thread');
-    }
+    // try {
+    //   await api.post('/community', newThread);
+    //   setThreads(prevThreads => [newThread, ...prevThreads]);
+    //   resetForm();
+    // } catch (err) {
+    //   console.error(err);
+    //   Alert.alert('Error', 'Failed to create thread');
+    // }
+    setThreads(prevThreads => [newThread, ...prevThreads]);
+    resetForm();
   };
 
   const startEditing = (thread) => {
@@ -74,25 +80,29 @@ export default function SupportCommunityScreen() {
 
   const updateThread = async () => {
     if (!editingThread || !title || !body) return;
-
     const updatedThread = {
       ...editingThread,
       title: title.trim(),
       body: body.trim(),
     };
-
-    try {
-      await api.put(`/community/${editingThread.id}`, updatedThread);
-      setThreads(prevThreads =>
-        prevThreads.map(thread =>
-          thread.id === editingThread.id ? updatedThread : thread
-        )
-      );
-      resetForm();
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to update thread');
-    }
+    // try {
+    //   await api.put(`/community/${editingThread.id}`, updatedThread);
+    //   setThreads(prevThreads =>
+    //     prevThreads.map(thread =>
+    //       thread.id === editingThread.id ? updatedThread : thread
+    //     )
+    //   );
+    //   resetForm();
+    // } catch (err) {
+    //   console.error(err);
+    //   Alert.alert('Error', 'Failed to update thread');
+    // }
+    setThreads(prevThreads =>
+      prevThreads.map(thread =>
+        thread.id === editingThread.id ? updatedThread : thread
+      )
+    );
+    resetForm();
   };
 
   const deleteThread = async (thread) => {
@@ -105,15 +115,18 @@ export default function SupportCommunityScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await api.delete(`/community/${thread.id}`);
-              setThreads(prevThreads =>
-                prevThreads.filter(t => t.id !== thread.id)
-              );
-            } catch (err) {
-              console.error(err);
-              Alert.alert('Error', 'Failed to delete thread');
-            }
+            // try {
+            //   await api.delete(`/community/${thread.id}`);
+            //   setThreads(prevThreads =>
+            //     prevThreads.filter(t => t.id !== thread.id)
+            //   );
+            // } catch (err) {
+            //   console.error(err);
+            //   Alert.alert('Error', 'Failed to delete thread');
+            // }
+            setThreads(prevThreads =>
+              prevThreads.filter(t => t.id !== thread.id)
+            );
           }
         }
       ]
