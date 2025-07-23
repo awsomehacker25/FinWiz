@@ -13,7 +13,11 @@ export default function LoginScreen({ navigation }) {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigation.replace('Home');
+      if (user.isNewUser) {
+        navigation.replace('ProfileSetup');
+      } else {
+        navigation.replace('Home');
+      }
     }
   }, [authLoading, user, navigation]);
 

@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { upsertUserProfile } from '../services/api';
 
 const ProfileSetupScreen = ({ navigation }) => {
-  const { user } = useContext(AuthContext);
+  const { user, login } = useContext(AuthContext);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState({
     phoneNumber: '',
@@ -122,6 +122,8 @@ const ProfileSetupScreen = ({ navigation }) => {
         password: user?.password || profile.password, // Store password if available
         ...profile
       });
+      // Update user context to mark profile as complete
+      await login({ ...user, isNewUser: false });
       navigation.replace('Home');
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to save profile');
