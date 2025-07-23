@@ -10,14 +10,17 @@ export default function SupportCommunityScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingThread, setEditingThread] = useState(null);
   const { user } = useContext(AuthContext);
+  const [replyInputs, setReplyInputs] = useState({}); // { [threadId]: replyText }
+  const [replyLoading, setReplyLoading] = useState({}); // { [threadId]: boolean }
 
   const processThreadData = (thread) => ({
-    id: String(thread.id || Date.now()),
-    userId: String(thread.userId || user?.id || 'anonymous'),
+    id: String(thread.id), // do not fallback to Date.now()
+    userId: String(thread.userId || ''),
     title: String(thread.title || ''),
     body: String(thread.body || ''),
     createdAt: thread.createdAt || new Date().toISOString(),
     replies: Array.isArray(thread.replies) ? thread.replies : [],
+    createdBy: thread.createdBy || '',
   });
 
   useEffect(() => {
@@ -26,16 +29,12 @@ export default function SupportCommunityScreen() {
 
   const loadThreads = async () => {
     try {
-      // TEMPORARILY COMMENTED OUT: API call to /community for review
-      /*
       const res = await api.get('/community');
       const data = Array.isArray(res?.data) ? res.data : [];
       const processedThreads = data
         .map(processThreadData)
         .filter(thread => thread.id && thread.title);
       setThreads(processedThreads);
-      */
-      setThreads([]);
     } catch (err) {
       console.error(err);
       setThreads([]);
@@ -44,24 +43,22 @@ export default function SupportCommunityScreen() {
 
   const addThread = async () => {
     if (!title || !body || !user) return;
-    const newThread = processThreadData({
-      id: `thread-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    const newThread = {
       userId: user.id,
       title: title.trim(),
       body: body.trim(),
       createdAt: new Date().toISOString(),
       replies: [],
-    });
-    // try {
-    //   await api.post('/community', newThread);
-    //   setThreads(prevThreads => [newThread, ...prevThreads]);
-    //   resetForm();
-    // } catch (err) {
-    //   console.error(err);
-    //   Alert.alert('Error', 'Failed to create thread');
-    // }
-    setThreads(prevThreads => [newThread, ...prevThreads]);
-    resetForm();
+    };
+    try {
+      const res = await api.post('/community', newThread);
+      const created = res.data?.thread || newThread;
+      setThreads(prevThreads => [processThreadData(created), ...prevThreads]);
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to create thread');
+    }
   };
 
   const startEditing = (thread) => {
@@ -81,28 +78,24 @@ export default function SupportCommunityScreen() {
   const updateThread = async () => {
     if (!editingThread || !title || !body) return;
     const updatedThread = {
-      ...editingThread,
+      id: editingThread.id,
+      userId: user.id,
       title: title.trim(),
       body: body.trim(),
     };
-    // try {
-    //   await api.put(`/community/${editingThread.id}`, updatedThread);
-    //   setThreads(prevThreads =>
-    //     prevThreads.map(thread =>
-    //       thread.id === editingThread.id ? updatedThread : thread
-    //     )
-    //   );
-    //   resetForm();
-    // } catch (err) {
-    //   console.error(err);
-    //   Alert.alert('Error', 'Failed to update thread');
-    // }
-    setThreads(prevThreads =>
-      prevThreads.map(thread =>
-        thread.id === editingThread.id ? updatedThread : thread
-      )
-    );
-    resetForm();
+    try {
+      const res = await api.put('/community', updatedThread);
+      const updated = res.data?.thread || updatedThread;
+      setThreads(prevThreads =>
+        prevThreads.map(thread =>
+          thread.id === editingThread.id ? processThreadData(updated) : thread
+        )
+      );
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to update thread');
+    }
   };
 
   const deleteThread = async (thread) => {
@@ -115,22 +108,49 @@ export default function SupportCommunityScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            // try {
-            //   await api.delete(`/community/${thread.id}`);
-            //   setThreads(prevThreads =>
-            //     prevThreads.filter(t => t.id !== thread.id)
-            //   );
-            // } catch (err) {
-            //   console.error(err);
-            //   Alert.alert('Error', 'Failed to delete thread');
-            // }
-            setThreads(prevThreads =>
-              prevThreads.filter(t => t.id !== thread.id)
-            );
+            try {
+              await api.delete('/community', { data: { id: thread.id, userId: user.id } });
+              setThreads(prevThreads =>
+                prevThreads.filter(t => t.id !== thread.id)
+              );
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Error', 'Failed to delete thread');
+            }
           }
         }
       ]
     );
+  };
+
+  // Add reply to a thread
+  const addReply = async (threadId) => {
+    const replyText = replyInputs[threadId]?.trim();
+    if (!replyText || !user) return;
+    setReplyLoading(prev => ({ ...prev, [threadId]: true }));
+    try {
+      const res = await api.patch('/community', {
+        threadId,
+        userId: user.id,
+        body: replyText,
+      });
+      const reply = res.data?.reply;
+      setThreads(prevThreads => prevThreads.map(thread => {
+        if (thread.id === threadId) {
+          return {
+            ...thread,
+            replies: [...thread.replies, reply],
+          };
+        }
+        return thread;
+      }));
+      setReplyInputs(prev => ({ ...prev, [threadId]: '' }));
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to add reply');
+    } finally {
+      setReplyLoading(prev => ({ ...prev, [threadId]: false }));
+    }
   };
 
   const formatDate = (dateString) => {
@@ -240,6 +260,43 @@ export default function SupportCommunityScreen() {
               </View>
               <Text style={styles.threadTitle}>{item.title}</Text>
               <Text style={styles.threadBody}>{item.body}</Text>
+              <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                {item.createdBy || (item.userId ? `Created by: ${item.userId}` : 'Created by: Unknown')}
+              </Text>
+            </View>
+            {/* Replies Section */}
+            <View style={{ marginTop: 12 }}>
+              {item.replies.length > 0 && (
+                <View style={{ marginBottom: 8 }}>
+                  {item.replies.map((reply) => (
+                    <View key={reply.replyId} style={styles.replyCard}>
+                      <Text style={styles.replyBody}>{reply.body}</Text>
+                      <View style={styles.replyMetaRow}>
+                        <Text style={styles.replyUser}>{reply.userId}</Text>
+                        <Text style={styles.replyDate}>{formatDate(reply.createdAt)}{reply.editedAt ? ' (edited)' : ''}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {/* Add Reply Form */}
+              <View style={styles.replyInputContainer}>
+                <TextInput
+                  style={styles.replyInput}
+                  placeholder="Write a reply..."
+                  value={replyInputs[item.id] || ''}
+                  onChangeText={text => setReplyInputs(prev => ({ ...prev, [item.id]: text }))}
+                  editable={!replyLoading[item.id]}
+                  placeholderTextColor="#888"
+                />
+                <TouchableOpacity
+                  style={styles.replyButton}
+                  onPress={() => addReply(item.id)}
+                  disabled={replyLoading[item.id] || !(replyInputs[item.id]?.trim())}
+                >
+                  <Text style={styles.replyButtonText}>{replyLoading[item.id] ? '...' : 'Reply'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.threadFooter}>
               <Text style={styles.replyCount}>
@@ -405,5 +462,62 @@ const styles = StyleSheet.create({
   replyCount: {
     color: '#666',
     fontSize: 14,
+  },
+  replyCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 6,
+  },
+  replyBody: {
+    fontSize: 15,
+    color: '#333',
+  },
+  replyMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  replyUser: {
+    color: '#2196F3',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  replyDate: {
+    color: '#888',
+    fontSize: 12,
+  },
+  replyInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  replyInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    padding: 8,
+    fontSize: 15,
+  },
+  replyButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  replyButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  replyMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 6, // add more space below username/date row
   },
 });
