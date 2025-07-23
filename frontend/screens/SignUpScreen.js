@@ -57,6 +57,7 @@ export default function SignUpScreen({ navigation }) {
         firstName: formData.firstName,
         lastName: formData.lastName,
         isNewUser: true, // Flag to indicate this is a new user
+        password: formData.password, // Store password in user context
       };
       await login(userData);
       // Upsert initial profile
@@ -67,7 +68,6 @@ export default function SignUpScreen({ navigation }) {
         lastName: formData.lastName,
         password: formData.password // Store password in user profile
       });
-      navigation.replace('ProfileSetup');
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to create account');
     } finally {
