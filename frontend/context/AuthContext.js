@@ -5,9 +5,22 @@ export const AuthContext = createContext();
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Load user from SecureStore if exists
+    const loadUser = async () => {
+      try {
+        const storedUser = await SecureStore.getItemAsync('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (e) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUser();
   }, []);
 
   const login = async (userData) => {
@@ -20,8 +33,13 @@ export default function AuthProvider({ children }) {
     await SecureStore.deleteItemAsync('user');
   };
 
+  if (loading) {
+    // Optionally render a splash/loading screen here
+    return null;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

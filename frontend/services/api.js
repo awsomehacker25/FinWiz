@@ -15,4 +15,13 @@ export async function upsertUserProfile(profile) {
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to upsert user profile');
   }
-} 
+}
+
+export const getUserProfileByEmail = async (email) => {
+  try {
+    const res = await api.get(`/userProfile`, { params: { id: email } });
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+}; 

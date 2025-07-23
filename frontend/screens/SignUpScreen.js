@@ -64,7 +64,8 @@ export default function SignUpScreen({ navigation }) {
         id: formData.email, // Use email as unique id for now
         email: formData.email,
         firstName: formData.firstName,
-        lastName: formData.lastName
+        lastName: formData.lastName,
+        password: formData.password // Store password in user profile
       });
       navigation.replace('ProfileSetup');
     } catch (error) {

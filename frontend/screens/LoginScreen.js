@@ -1,14 +1,26 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { getUserProfileByEmail } from '../services/api';
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useContext(AuthContext);
+  const { login, user, loading: authLoading } = useContext(AuthContext);
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigation.replace('Home');
+    }
+  }, [authLoading, user, navigation]);
+
+  if (authLoading || user) {
+    // Optionally render a splash/loading screen here
+    return null;
+  }
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,8 +45,26 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // TODO: Integrate with Azure AD B2C
-      await login({ email });
+      // Fetch user profile by email
+      const userProfile = await getUserProfileByEmail(email);
+      if (!userProfile) {
+        Alert.alert('Login Failed', 'No account found with this email.');
+        setLoading(false);
+        return;
+      }
+      if (!userProfile.password) {
+        Alert.alert('Login Failed', 'This account does not have a password set.');
+        setLoading(false);
+        return;
+      }
+      if (userProfile.password !== password) {
+        Alert.alert('Login Failed', 'Incorrect password.');
+        setLoading(false);
+        return;
+      }
+      // Remove password before storing in context
+      const { password: _pw, ...userData } = userProfile;
+      await login(userData);
       navigation.replace('Home');
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to login');
