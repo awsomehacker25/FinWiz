@@ -38,16 +38,12 @@ export default function SavingsGoalsScreen() {
   const loadGoals = async () => {
     if (user) {
       try {
-        // TEMPORARILY COMMENTED OUT: API call to /goals for review
-        /*
         const res = await api.get(`/goals?userId=${user.id}`);
         const data = Array.isArray(res?.data) ? res.data : [];
         const processedGoals = data
           .map(processGoalData)
           .filter(goal => goal.id && goal.goalName);
         setGoals(processedGoals);
-        */
-        setGoals([]);
       } catch (err) {
         console.error(err);
         setGoals([]);
@@ -70,16 +66,14 @@ export default function SavingsGoalsScreen() {
       saved: parsedSaved,
       createdAt: new Date().toISOString(),
     });
-    // try {
-    //   await api.post('/goals', newGoal);
-    //   setGoals(prevGoals => [newGoal, ...prevGoals]);
-    //   resetForm();
-    // } catch (err) {
-    //   console.error(err);
-    //   Alert.alert('Error', 'Failed to add goal');
-    // }
-    setGoals(prevGoals => [newGoal, ...prevGoals]);
-    resetForm();
+    try {
+      await api.post('/goals', newGoal);
+      setGoals(prevGoals => [newGoal, ...prevGoals]);
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to add goal');
+    }
   };
 
   const startEditing = (goal) => {
@@ -113,26 +107,19 @@ export default function SavingsGoalsScreen() {
       target: parsedTarget,
       saved: parsedSaved,
     };
-    // try {
-    //   await api.put(`/goals/${editingGoal.id}`, updatedGoal);
-    //   setGoals(prevGoals =>
-    //     prevGoals.map(goal =>
-    //       goal.id === editingGoal.id ? updatedGoal : goal
-    //     )
-    //   );
-    //   setEditingGoal(null);
-    //   resetForm();
-    // } catch (err) {
-    //   console.error(err);
-    //   Alert.alert('Error', 'Failed to update goal');
-    // }
-    setGoals(prevGoals =>
-      prevGoals.map(goal =>
-        goal.id === editingGoal.id ? updatedGoal : goal
-      )
-    );
-    setEditingGoal(null);
-    resetForm();
+    try {
+      await api.put(`/goals?id=${editingGoal.id}`, updatedGoal);
+      setGoals(prevGoals =>
+        prevGoals.map(goal =>
+          goal.id === editingGoal.id ? updatedGoal : goal
+        )
+      );
+      setEditingGoal(null);
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to update goal');
+    }
   };
 
   const deleteGoal = async (goal) => {
@@ -145,18 +132,15 @@ export default function SavingsGoalsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            // try {
-            //   await api.delete(`/goals/${goal.id}`);
-            //   setGoals(prevGoals =>
-            //     prevGoals.filter(g => g.id !== goal.id)
-            //   );
-            // } catch (err) {
-            //   console.error(err);
-            //   Alert.alert('Error', 'Failed to delete goal');
-            // }
-            setGoals(prevGoals =>
-              prevGoals.filter(g => g.id !== goal.id)
-            );
+            try {
+              await api.delete(`/goals?id=${goal.id}`);
+              setGoals(prevGoals =>
+                prevGoals.filter(g => g.id !== goal.id)
+              );
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Error', 'Failed to delete goal');
+            }
           }
         }
       ]

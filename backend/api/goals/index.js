@@ -23,6 +23,33 @@ module.exports = async function (context, req) {
       parameters: [{ name: '@userId', value: userId }]
     }).fetchAll();
     context.res = { status: 200, body: resources };
+  } else if (req.method === 'PUT') {
+    // Update savings goal
+    const id = req.query.id;
+    const updatedGoal = req.body;
+    if (!id) {
+      context.res = { status: 400, body: { error: 'Missing id' } };
+      return;
+    }
+    try {
+      await container.item(id, id).replace(updatedGoal);
+      context.res = { status: 200, body: { message: 'Goal updated', goal: updatedGoal } };
+    } catch (err) {
+      context.res = { status: 404, body: { error: 'Goal not found', details: err.message } };
+    }
+  } else if (req.method === 'DELETE') {
+    // Delete savings goal
+    const id = req.query.id;
+    if (!id) {
+      context.res = { status: 400, body: { error: 'Missing id' } };
+      return;
+    }
+    try {
+      await container.item(id, id).delete();
+      context.res = { status: 200, body: { message: 'Goal deleted', id } };
+    } catch (err) {
+      context.res = { status: 404, body: { error: 'Goal not found', details: err.message } };
+    }
   } else {
     context.res = { status: 405, body: { error: 'Method not allowed' } };
   }
