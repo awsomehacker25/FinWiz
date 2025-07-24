@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import api from '../services/api';
+import api, { editReply, deleteReply } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function SupportCommunityScreen() {
   const [threads, setThreads] = useState([]);
@@ -12,6 +13,9 @@ export default function SupportCommunityScreen() {
   const { user } = useContext(AuthContext);
   const [replyInputs, setReplyInputs] = useState({}); // { [threadId]: replyText }
   const [replyLoading, setReplyLoading] = useState({}); // { [threadId]: boolean }
+  const [editingReply, setEditingReply] = useState({}); // { [replyId]: { threadId, body } }
+  const [replyEditInputs, setReplyEditInputs] = useState({}); // { [replyId]: body }
+  const [replyEditLoading, setReplyEditLoading] = useState({}); // { [replyId]: boolean }
 
   const processThreadData = (thread) => ({
     id: String(thread.id), // do not fallback to Date.now()
@@ -44,7 +48,7 @@ export default function SupportCommunityScreen() {
   const addThread = async () => {
     if (!title || !body || !user) return;
     const newThread = {
-      userId: user.id,
+      userId: user.email,
       title: title.trim(),
       body: body.trim(),
       createdAt: new Date().toISOString(),
@@ -79,7 +83,7 @@ export default function SupportCommunityScreen() {
     if (!editingThread || !title || !body) return;
     const updatedThread = {
       id: editingThread.id,
-      userId: user.id,
+      userId: user.email,
       title: title.trim(),
       body: body.trim(),
     };
@@ -109,7 +113,7 @@ export default function SupportCommunityScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete('/community', { data: { id: thread.id, userId: user.id } });
+              await api.delete('/community', { data: { id: thread.id, userId: user.email } });
               setThreads(prevThreads =>
                 prevThreads.filter(t => t.id !== thread.id)
               );
@@ -131,7 +135,7 @@ export default function SupportCommunityScreen() {
     try {
       const res = await api.patch('/community', {
         threadId,
-        userId: user.id,
+        userId: user.email,
         body: replyText,
       });
       const reply = res.data?.reply;
@@ -151,6 +155,76 @@ export default function SupportCommunityScreen() {
     } finally {
       setReplyLoading(prev => ({ ...prev, [threadId]: false }));
     }
+  };
+
+  // Edit reply handler
+  const startEditingReply = (threadId, reply) => {
+    setEditingReply({ [reply.replyId]: { threadId, body: reply.body } });
+    setReplyEditInputs({ [reply.replyId]: reply.body });
+  };
+  const cancelEditingReply = (replyId) => {
+    setEditingReply({});
+    setReplyEditInputs(prev => ({ ...prev, [replyId]: '' }));
+  };
+  const handleEditReply = async (threadId, replyId) => {
+    const body = replyEditInputs[replyId]?.trim();
+    if (!body || !user) return;
+    setReplyEditLoading(prev => ({ ...prev, [replyId]: true }));
+    try {
+      const res = await editReply({ threadId, replyId, userId: user.email, body });
+      setThreads(prevThreads => prevThreads.map(thread => {
+        if (thread.id === threadId) {
+          return {
+            ...thread,
+            replies: thread.replies.map(r =>
+              r.replyId === replyId ? { ...r, body: res.reply.body, editedAt: res.reply.editedAt } : r
+            ),
+          };
+        }
+        return thread;
+      }));
+      setEditingReply({});
+      setReplyEditInputs({});
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to edit reply');
+    } finally {
+      setReplyEditLoading(prev => ({ ...prev, [replyId]: false }));
+    }
+  };
+  // Delete reply handler
+  const handleDeleteReply = (threadId, replyId) => {
+    Alert.alert(
+      'Delete Reply',
+      'Are you sure you want to delete this reply?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete', style: 'destructive', onPress: async () => {
+            setReplyEditLoading(prev => ({ ...prev, [replyId]: true }));
+            try {
+              await deleteReply({ threadId, replyId, userId: user.email });
+              setThreads(prevThreads => prevThreads.map(thread => {
+                if (thread.id === threadId) {
+                  return {
+                    ...thread,
+                    replies: thread.replies.filter(r => r.replyId !== replyId),
+                  };
+                }
+                return thread;
+              }));
+              setEditingReply({});
+              setReplyEditInputs({});
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Error', 'Failed to delete reply');
+            } finally {
+              setReplyEditLoading(prev => ({ ...prev, [replyId]: false }));
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatDate = (dateString) => {
@@ -241,7 +315,7 @@ export default function SupportCommunityScreen() {
                 <Text style={styles.threadDate}>
                   {formatDate(item.createdAt)}
                 </Text>
-                {item.userId === user?.id && (
+                {item.userId === user?.email && (
                   <View style={styles.threadActions}>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.editButton]}
@@ -270,11 +344,66 @@ export default function SupportCommunityScreen() {
                 <View style={{ marginBottom: 8 }}>
                   {item.replies.map((reply) => (
                     <View key={reply.replyId} style={styles.replyCard}>
-                      <Text style={styles.replyBody}>{reply.body}</Text>
-                      <View style={styles.replyMetaRow}>
-                        <Text style={styles.replyUser}>{reply.userId}</Text>
-                        <Text style={styles.replyDate}>{formatDate(reply.createdAt)}{reply.editedAt ? ' (edited)' : ''}</Text>
-                      </View>
+                      {editingReply[reply.replyId] ? (
+                        <View style={styles.replyEditRow}>
+                          <TextInput
+                            style={styles.replyEditInput}
+                            value={replyEditInputs[reply.replyId]}
+                            onChangeText={text => setReplyEditInputs(prev => ({ ...prev, [reply.replyId]: text }))}
+                            editable={!replyEditLoading[reply.replyId]}
+                            placeholder="Edit your reply..."
+                            placeholderTextColor="#888"
+                          />
+                          <TouchableOpacity
+                            style={[styles.replyActionButton, styles.replySaveButton]}
+                            onPress={() => handleEditReply(item.id, reply.replyId)}
+                            disabled={replyEditLoading[reply.replyId] || !(replyEditInputs[reply.replyId]?.trim())}
+                          >
+                            <MaterialIcons name="check" size={20} color="#fff" />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.replyActionButton, styles.replyCancelButton]}
+                            onPress={() => cancelEditingReply(reply.replyId)}
+                            disabled={replyEditLoading[reply.replyId]}
+                          >
+                            <MaterialIcons name="close" size={20} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <>
+                          <View
+                            style={[
+                              styles.replyBodyRow,
+                              reply.userId !== user?.email && { marginBottom: 8 },
+                            ]}
+                          >
+                            <Text style={styles.replyBody}>{reply.body}</Text>
+                            {reply.userId === user?.email && (
+                              <View style={styles.replyActionsRow}>
+                                <TouchableOpacity
+                                  style={[styles.replyActionButton, styles.replyEditButton]}
+                                  onPress={() => startEditingReply(item.id, reply)}
+                                  disabled={replyEditLoading[reply.replyId]}
+                                >
+                                  <MaterialIcons name="edit" size={18} color="#fff" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={[styles.replyActionButton, styles.replyDeleteButton]}
+                                  onPress={() => handleDeleteReply(item.id, reply.replyId)}
+                                  disabled={replyEditLoading[reply.replyId]}
+                                >
+                                  <MaterialIcons name="delete" size={18} color="#fff" />
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                          <View style={styles.replyMetaRow}>
+                            <Text style={styles.replyUser}>{reply.userId}</Text>
+                            <Text style={styles.replyDot}>·</Text>
+                            <Text style={styles.replyDate}>{formatDate(reply.createdAt)}{reply.editedAt ? ' (edited)' : ''}</Text>
+                          </View>
+                        </>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -466,21 +595,91 @@ const styles = StyleSheet.create({
   replyCard: {
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    padding: 8,
+    padding: 10,
     marginBottom: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+    marginLeft: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+  },
+  replyBodyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    // marginBottom will be applied conditionally inline
   },
   replyBody: {
     fontSize: 15,
     color: '#333',
+    flex: 1,
+    marginRight: 8,
+    marginBottom: 0, // remove any bottom margin
   },
-  replyMeta: {
+  replyEditRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  replyEditInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    padding: 8,
+    fontSize: 15,
+  },
+  replyActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 4,
+  },
+  replyActionButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginLeft: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  replyEditButton: {
+    backgroundColor: '#2196F3',
+  },
+  replyDeleteButton: {
+    backgroundColor: '#f44336',
+  },
+  replySaveButton: {
+    backgroundColor: '#4CAF50',
+  },
+  replyCancelButton: {
+    backgroundColor: '#9e9e9e',
+  },
+  replyActionButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  replyMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2, // slight space above meta
+    marginBottom: 0,
+    gap: 6,
   },
   replyUser: {
     color: '#2196F3',
     fontSize: 12,
+    fontWeight: 'bold',
+  },
+  replyDot: {
+    color: '#888',
+    fontSize: 14,
+    marginHorizontal: 2,
     fontWeight: 'bold',
   },
   replyDate: {
@@ -512,12 +711,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 15,
-  },
-  replyMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 6, // add more space below username/date row
   },
 });

@@ -32,6 +32,36 @@ module.exports = async function (context, req) {
     }));
     context.res = { status: 200, body: threads };
 
+  } else if (method === 'PUT' && req.body.replyId) {
+    // Edit a reply (only by creator)
+    const { threadId, replyId, userId, body } = req.body;
+    if (!threadId || !replyId || !userId || !body) {
+      context.res = { status: 400, body: { error: 'Missing required fields' } };
+      return;
+    }
+    try {
+      const { resource: thread } = await container.item(threadId, threadId).read();
+      if (!thread) {
+        context.res = { status: 404, body: { error: 'Thread not found' } };
+        return;
+      }
+      const replyIndex = (thread.replies || []).findIndex(r => r.replyId === replyId);
+      if (replyIndex === -1) {
+        context.res = { status: 404, body: { error: 'Reply not found' } };
+        return;
+      }
+      if (thread.replies[replyIndex].userId !== userId) {
+        context.res = { status: 403, body: { error: 'Not authorized to edit this reply' } };
+        return;
+      }
+      thread.replies[replyIndex].body = body;
+      thread.replies[replyIndex].editedAt = new Date().toISOString();
+      await container.item(threadId, threadId).replace(thread);
+      context.res = { status: 200, body: { message: 'Reply updated', reply: thread.replies[replyIndex] } };
+    } catch (err) {
+      context.res = { status: 500, body: { error: 'Failed to update reply', details: err.message } };
+    }
+
   } else if (method === 'PUT') {
     // Edit a thread (only by creator)
     const { id, userId, title, body } = req.body;
@@ -55,6 +85,35 @@ module.exports = async function (context, req) {
       context.res = { status: 200, body: { message: 'Thread updated', thread } };
     } catch (err) {
       context.res = { status: 500, body: { error: 'Failed to update thread', details: err.message } };
+    }
+
+  } else if (method === 'DELETE' && req.body.replyId) {
+    // Delete a reply (only by creator)
+    const { threadId, replyId, userId } = req.body;
+    if (!threadId || !replyId || !userId) {
+      context.res = { status: 400, body: { error: 'Missing required fields' } };
+      return;
+    }
+    try {
+      const { resource: thread } = await container.item(threadId, threadId).read();
+      if (!thread) {
+        context.res = { status: 404, body: { error: 'Thread not found' } };
+        return;
+      }
+      const replyIndex = (thread.replies || []).findIndex(r => r.replyId === replyId);
+      if (replyIndex === -1) {
+        context.res = { status: 404, body: { error: 'Reply not found' } };
+        return;
+      }
+      if (thread.replies[replyIndex].userId !== userId) {
+        context.res = { status: 403, body: { error: 'Not authorized to delete this reply' } };
+        return;
+      }
+      thread.replies.splice(replyIndex, 1);
+      await container.item(threadId, threadId).replace(thread);
+      context.res = { status: 200, body: { message: 'Reply deleted' } };
+    } catch (err) {
+      context.res = { status: 500, body: { error: 'Failed to delete reply', details: err.message } };
     }
 
   } else if (method === 'DELETE') {
@@ -105,65 +164,6 @@ module.exports = async function (context, req) {
       context.res = { status: 200, body: { message: 'Reply added', reply } };
     } catch (err) {
       context.res = { status: 500, body: { error: 'Failed to add reply', details: err.message } };
-    }
-
-  } else if (method === 'PUT' && req.body.replyId) {
-    // Edit a reply (only by creator)
-    const { threadId, replyId, userId, body } = req.body;
-    if (!threadId || !replyId || !userId || !body) {
-      context.res = { status: 400, body: { error: 'Missing required fields' } };
-      return;
-    }
-    try {
-      const { resource: thread } = await container.item(threadId, threadId).read();
-      if (!thread) {
-        context.res = { status: 404, body: { error: 'Thread not found' } };
-        return;
-      }
-      const replyIndex = (thread.replies || []).findIndex(r => r.replyId === replyId);
-      if (replyIndex === -1) {
-        context.res = { status: 404, body: { error: 'Reply not found' } };
-        return;
-      }
-      if (thread.replies[replyIndex].userId !== userId) {
-        context.res = { status: 403, body: { error: 'Not authorized to edit this reply' } };
-        return;
-      }
-      thread.replies[replyIndex].body = body;
-      thread.replies[replyIndex].editedAt = new Date().toISOString();
-      await container.item(threadId, threadId).replace(thread);
-      context.res = { status: 200, body: { message: 'Reply updated', reply: thread.replies[replyIndex] } };
-    } catch (err) {
-      context.res = { status: 500, body: { error: 'Failed to update reply', details: err.message } };
-    }
-
-  } else if (method === 'DELETE' && req.body.replyId) {
-    // Delete a reply (only by creator)
-    const { threadId, replyId, userId } = req.body;
-    if (!threadId || !replyId || !userId) {
-      context.res = { status: 400, body: { error: 'Missing required fields' } };
-      return;
-    }
-    try {
-      const { resource: thread } = await container.item(threadId, threadId).read();
-      if (!thread) {
-        context.res = { status: 404, body: { error: 'Thread not found' } };
-        return;
-      }
-      const replyIndex = (thread.replies || []).findIndex(r => r.replyId === replyId);
-      if (replyIndex === -1) {
-        context.res = { status: 404, body: { error: 'Reply not found' } };
-        return;
-      }
-      if (thread.replies[replyIndex].userId !== userId) {
-        context.res = { status: 403, body: { error: 'Not authorized to delete this reply' } };
-        return;
-      }
-      thread.replies.splice(replyIndex, 1);
-      await container.item(threadId, threadId).replace(thread);
-      context.res = { status: 200, body: { message: 'Reply deleted' } };
-    } catch (err) {
-      context.res = { status: 500, body: { error: 'Failed to delete reply', details: err.message } };
     }
 
   } else {

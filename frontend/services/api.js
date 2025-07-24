@@ -42,4 +42,24 @@ export async function upsertLiteracyProgress(userId, lessons) {
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to update literacy progress');
   }
+}
+
+// Edit a reply
+export async function editReply({ threadId, replyId, userId, body }) {
+  try {
+    const res = await api.put('/community', { threadId, replyId, userId, body });
+    return res.data;
+  } catch (err) {
+    throw new Error(err.response?.data?.error || 'Failed to edit reply');
+  }
+}
+
+// Delete a reply
+export async function deleteReply({ threadId, replyId, userId }) {
+  try {
+    const res = await api.delete('/community', { data: { threadId, replyId, userId } });
+    return res.data;
+  } catch (err) {
+    throw new Error(err.response?.data?.error || 'Failed to delete reply');
+  }
 } 
