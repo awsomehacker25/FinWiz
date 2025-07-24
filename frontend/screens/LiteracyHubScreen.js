@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
+import { getLiteracyProgress, upsertLiteracyProgress } from '../services/api';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const LESSONS = [
   {
@@ -460,6 +463,7 @@ const LESSONS = [
 ];
 
 export default function LiteracyHubScreen() {
+  const { user } = useContext(AuthContext);
   const [selected, setSelected] = useState(null);
   const [lessons, setLessons] = useState(LESSONS);
   const [currentSection, setCurrentSection] = useState(0);
@@ -467,16 +471,83 @@ export default function LiteracyHubScreen() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizFeedback, setQuizFeedback] = useState({}); // { correct?: boolean, show?: boolean }
   const [showExplanations, setShowExplanations] = useState(false);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const [questionsAnswered, setQuestionsAnswered] = useState(0);
+
+  // Helper to build progress object for API
+  const buildProgressObject = (lessonsArr) => {
+    const progress = {};
+    lessonsArr.forEach(lesson => {
+      progress[lesson.id] = {
+        completed: lesson.completed,
+        questions: lesson.questions || {}
+      };
+    });
+    return progress;
+  };
+
+  // Merge API progress into local lessons
+  const mergeProgress = (apiProgress) => {
+    let totalQuestionsAnswered = 0;
+    const updatedLessons = LESSONS.map(lesson => {
+      const progress = apiProgress[lesson.id] || {};
+      const questions = progress.questions || {};
+      // Count answered questions
+      totalQuestionsAnswered += Object.values(questions).filter(Boolean).length;
+      return {
+        ...lesson,
+        completed: !!progress.completed,
+        questions: { ...questions },
+      };
+    });
+    setLessons(updatedLessons);
+    setQuestionsAnswered(totalQuestionsAnswered);
+  };
+
+  // Fetch progress on mount
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const data = await getLiteracyProgress(user.email || user.id);
+        mergeProgress(data.lessons || {});
+      } catch (err) {
+        // Optionally handle error
+      } finally {
+        setProgressLoaded(true);
+      }
+    })();
+  }, [user]);
+
+  // Save progress to API
+  const saveProgress = async (updatedLessons) => {
+    if (!user) return;
+    const progress = buildProgressObject(updatedLessons);
+    try {
+      await upsertLiteracyProgress(user.email || user.id, progress);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   const calculateProgress = () => {
     const completed = lessons.filter(l => l.completed).length;
     return (completed / lessons.length) * 100;
   };
 
+  // Helper: get points per question for a lesson
+  const getPointsPerQuestion = (lesson) => {
+    const numQuestions = lesson.content.sections.length;
+    return lesson.points / numQuestions;
+  };
+
+  // Calculate total points earned (per question)
   const calculateTotalPoints = () => {
-    return lessons
-      .filter(l => l.completed)
-      .reduce((sum, lesson) => sum + lesson.points, 0);
+    return lessons.reduce((sum, lesson) => {
+      const perQ = getPointsPerQuestion(lesson);
+      const numCorrect = Object.values(lesson.questions || {}).filter(Boolean).length;
+      return sum + perQ * numCorrect;
+    }, 0);
   };
 
   const handleAnswer = (questionIndex, answerIndex) => {
@@ -495,6 +566,18 @@ export default function LiteracyHubScreen() {
     if (userAnswer === section.quiz.correct) {
       setQuizFeedback({ correct: true, show: true });
       setShowExplanations(true);
+      // Update per-question progress and persist
+      const updatedLessons = lessons.map(l => {
+        if (l.id !== selected) return l;
+        const questions = { ...(l.questions || {}) };
+        questions[currentSection] = true;
+        return { ...l, questions };
+      });
+      setLessons(updatedLessons);
+      // Update questions answered stat
+      const totalQuestions = updatedLessons.reduce((acc, l) => acc + Object.values(l.questions || {}).filter(Boolean).length, 0);
+      setQuestionsAnswered(totalQuestions);
+      saveProgress(updatedLessons);
     } else {
       setQuizFeedback({ correct: false, show: true, wrongExplanation: section.quiz.explanations[userAnswer] });
       setShowExplanations(false);
@@ -511,11 +594,11 @@ export default function LiteracyHubScreen() {
       setShowExplanations(false);
     } else {
       // Lesson completed
-      setLessons(prev =>
-        prev.map(l =>
-          l.id === selected ? { ...l, completed: true } : l
-        )
+      const updatedLessons = lessons.map(l =>
+        l.id === selected ? { ...l, completed: true } : l
       );
+      setLessons(updatedLessons);
+      saveProgress(updatedLessons);
       setSelected(null);
       setCurrentSection(0);
       setQuizAnswers({});
@@ -525,47 +608,91 @@ export default function LiteracyHubScreen() {
     }
   };
 
-  const LessonCard = ({ lesson }) => (
-    <TouchableOpacity
-      style={[styles.lessonCard, lesson.completed && styles.lessonCardCompleted]}
-      onPress={() => {
-        setSelected(lesson.id);
-        setCurrentSection(0);
-        setQuizAnswers({});
-        setShowQuiz(false);
-      }}
-    >
-      <View style={styles.lessonHeader}>
-        <View style={styles.lessonMeta}>
-          <Text style={styles.lessonTitle}>{lesson.title}</Text>
-          <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-        </View>
-        {lesson.completed && (
-          <View style={styles.completedBadge}>
-            <Text style={styles.completedText}>✓</Text>
+  // Helper: get first unanswered section index for a lesson
+  const getFirstUnansweredSection = (lesson) => {
+    const questions = lesson.questions || {};
+    const sections = lesson.content.sections;
+    for (let i = 0; i < sections.length; i++) {
+      if (!questions[i]) return i;
+    }
+    return 0; // All answered, default to first
+  };
+
+  // Helper: get lesson progress state
+  const getLessonProgressState = (lesson) => {
+    const questions = lesson.questions || {};
+    const total = lesson.content.sections.length;
+    const answered = Object.values(questions).filter(Boolean).length;
+    if (lesson.completed) return 'review';
+    if (answered === 0) return 'start';
+    if (answered < total) return 'continue';
+    return 'review';
+  };
+
+  // Elegant Reset progress handler
+  const handleResetProgress = async () => {
+    if (!user) return;
+    Alert.alert(
+      'Reset Progress',
+      'Are you sure you want to reset all your literacy progress? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset', style: 'destructive', onPress: async () => {
+            await upsertLiteracyProgress(user.email || user.id, {});
+            setLessons(LESSONS.map(l => ({ ...l, completed: false, questions: {} })));
+            setQuestionsAnswered(0);
+          }
+        }
+      ]
+    );
+  };
+
+  const LessonCard = ({ lesson }) => {
+    const progressState = getLessonProgressState(lesson);
+    let buttonText = 'Start';
+    if (progressState === 'continue') buttonText = 'Continue';
+    if (progressState === 'review') buttonText = 'Review';
+    return (
+      <TouchableOpacity
+        style={[styles.lessonCard, lesson.completed && styles.lessonCardCompleted]}
+        onPress={() => {
+          setSelected(lesson.id);
+          setCurrentSection(getFirstUnansweredSection(lesson));
+          setQuizAnswers({});
+          setShowQuiz(false);
+        }}
+      >
+        <View style={styles.lessonHeader}>
+          <View style={styles.lessonMeta}>
+            <Text style={styles.lessonTitle}>{lesson.title}</Text>
+            <Text style={styles.lessonDuration}>{lesson.duration}</Text>
           </View>
-        )}
-      </View>
-      <Text style={styles.lessonDescription}>{lesson.description}</Text>
-      <View style={styles.lessonFooter}>
-        <Text style={styles.pointsText}>{lesson.points} points</Text>
-        <TouchableOpacity
-          style={[
-            styles.startButton,
-            lesson.completed && styles.startButtonCompleted
-          ]}
-          onPress={() => {
-            setSelected(lesson.id);
-            setCurrentSection(0);
-          }}
-        >
-          <Text style={styles.startButtonText}>
-            {lesson.completed ? 'Review' : 'Start'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+          {lesson.completed && (
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedText}>✓</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.lessonDescription}>{lesson.description}</Text>
+        <View style={styles.lessonFooter}>
+          <Text style={styles.pointsText}>{lesson.points} points</Text>
+          <TouchableOpacity
+            style={[
+              styles.startButton,
+              lesson.completed && styles.startButtonCompleted
+            ]}
+            onPress={() => {
+              setSelected(lesson.id);
+              setCurrentSection(getFirstUnansweredSection(lesson));
+            }}
+          >
+            <Text style={styles.startButtonText}>{buttonText}</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (selected) {
     const currentLesson = lessons.find(l => l.id === selected);
@@ -689,7 +816,6 @@ export default function LiteracyHubScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Financial Literacy Hub</Text>
-      
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{Math.round(calculateProgress())}%</Text>
@@ -699,8 +825,19 @@ export default function LiteracyHubScreen() {
           <Text style={styles.statValue}>{calculateTotalPoints()}</Text>
           <Text style={styles.statLabel}>Points Earned</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{questionsAnswered}</Text>
+          <Text style={styles.statLabel}>Questions Answered</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={handleResetProgress}
+          accessibilityLabel="Reset Progress"
+        >
+          <MaterialIcons name="refresh" size={20} color="#E53935" />
+          <Text style={styles.resetButtonText}>Reset</Text>
+        </TouchableOpacity>
       </View>
-
       <FlatList
         style={styles.list}
         data={lessons}
@@ -941,5 +1078,23 @@ const styles = StyleSheet.create({
     color: '#616161',
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E53935',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 12,
+    alignSelf: 'center',
+    backgroundColor: 'white',
+  },
+  resetButtonText: {
+    color: '#E53935',
+    fontWeight: 'bold',
+    marginLeft: 4,
+    fontSize: 14,
   },
 });

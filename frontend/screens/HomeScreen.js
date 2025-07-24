@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getLiteracyProgress } from '../services/api';
 
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
@@ -15,17 +15,19 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadSummaryData();
-  }, [user]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSummaryData();
+    });
+    return unsubscribe;
+  }, [user, navigation]);
 
   const loadSummaryData = async () => {
     if (user) {
       try {
-        // TEMPORARILY COMMENTED OUT: API calls other than userProfile for review
-        /*
-        const [incomeRes, goalsRes, lessonsRes, communityRes] = await Promise.all([
+        const [incomeRes, goalsRes, literacyProgress, communityRes] = await Promise.all([
           api.get(`/income?userId=${user.id}`),
           api.get(`/goals?userId=${user.id}`),
-          api.get('/literacy/progress'),
+          getLiteracyProgress(user.email || user.id),
           api.get('/community')
         ]);
 
@@ -38,20 +40,25 @@ export default function HomeScreen({ navigation }) {
         // Handle goals calculation with null checks
         const goals = Array.isArray(goalsRes?.data) ? goalsRes.data : [];
         const goalProgress = goals.length > 0 
-          ? goals.reduce((sum, goal) => 
-              sum + (Number(goal?.saved || 0) / Number(goal?.target || 1)), 0
-            ) / goals.length 
+          ? goals.reduce((sum, goal) => {
+              const target = Number(goal?.target) || 0;
+              const saved = Number(goal?.saved) || 0;
+              return sum + (target > 0 ? saved / target : 0);
+            }, 0) / goals.length 
           : 0;
 
-        // Update summary with proper null checks
+        // Calculate completed lessons from literacyProgress
+        let lessonsCompleted = 0;
+        if (literacyProgress && literacyProgress.lessons) {
+          lessonsCompleted = Object.values(literacyProgress.lessons).filter(l => l.completed).length;
+        }
+
         setSummary({
           totalIncome: totalIncome,
           goalProgress: Math.min(goalProgress * 100, 100), // Cap at 100%
-          lessonsCompleted: lessonsRes?.data?.completed || 0,
+          lessonsCompleted,
           communityThreads: Array.isArray(communityRes?.data) ? communityRes.data.length : 0
         });
-        */
-        // Only userProfile logic should remain active for now
       } catch (err) {
         console.error('Error loading summary:', err);
         // Keep the existing values on error

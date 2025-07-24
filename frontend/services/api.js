@@ -24,4 +24,22 @@ export const getUserProfileByEmail = async (email) => {
   } catch (err) {
     throw err;
   }
-}; 
+};
+
+export async function getLiteracyProgress(userId) {
+  try {
+    const response = await api.get('/literacy', { params: { userId } });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to fetch literacy progress');
+  }
+}
+
+export async function upsertLiteracyProgress(userId, lessons) {
+  try {
+    const response = await api.post('/literacy', { userId, lessons });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to update literacy progress');
+  }
+} 
