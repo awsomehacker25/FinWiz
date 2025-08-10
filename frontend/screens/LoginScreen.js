@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView, SafeAreaView, Image } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getUserProfileByEmail } from '../services/api';
@@ -79,23 +79,25 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>F</Text>
-          </View>
-          <Text style={styles.appName}>Finance AI</Text>
+          <Image
+            source={require('../assets/finwiz-logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>FinWiz</Text>
           <Text style={styles.tagline}>Your Smart Financial Assistant</Text>
         </View>
-
+ 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
-            <TextInput 
+            <TextInput
               style={styles.input}
               placeholder="Enter your email"
               value={email}
@@ -103,26 +105,26 @@ export default function LoginScreen({ navigation }) {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              placeholderTextColor="#666"
+              placeholderTextColor="#B0BEC5"
             />
           </View>
-
+ 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput 
+            <TextInput
               style={styles.input}
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholderTextColor="#666"
+              placeholderTextColor="#B0BEC5"
             />
           </View>
-
+ 
           <TouchableOpacity style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
-
+ 
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
@@ -132,19 +134,19 @@ export default function LoginScreen({ navigation }) {
               {loading ? 'Logging in...' : t('login')}
             </Text>
           </TouchableOpacity>
-
+ 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
           </View>
-
+ 
           <TouchableOpacity style={styles.socialButton}>
             <Text style={styles.socialIcon}>G</Text>
             <Text style={styles.socialButtonText}>Continue with Google</Text>
           </TouchableOpacity>
         </View>
-
+ 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -155,82 +157,85 @@ export default function LoginScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#244662',
   },
   scrollContent: {
     flexGrow: 1,
     padding: 24,
-    paddingBottom: 8, // reduced from 40
+    paddingBottom: 8,
   },
   logoContainer: {
     alignItems: 'center',
     marginTop: 48,
     marginBottom: 48,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#4CAF50',
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 120,
+    height: 120,
     marginBottom: 16,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: 'white',
-  },
   appName: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 8,
+    letterSpacing: 1,
   },
   tagline: {
     fontSize: 16,
-    color: '#666',
+    color: '#B0BEC5',
+    textAlign: 'center',
   },
   form: {
     gap: 16,
-    // marginBottom: 32, // removed to reduce space
   },
   inputContainer: {
     gap: 8,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#2c3e50',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#E3F2FD',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
   },
   forgotPasswordText: {
-    color: '#2196F3',
+    color: '#64B5F6',
     fontSize: 14,
+    fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3F51B5',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   loginButtonDisabled: {
-    backgroundColor: '#a5d6a7',
+    backgroundColor: '#7986CB',
   },
   loginButtonText: {
     color: 'white',
@@ -245,49 +250,55 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#546E7A',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#666',
+    color: '#B0BEC5',
     fontSize: 14,
+    fontWeight: '500',
   },
   socialButton: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#E3F2FD',
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   socialIcon: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#DB4437', // Google red color
+    color: '#DB4437',
   },
   socialButtonText: {
-    color: '#2c3e50',
+    color: '#1A237E',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: 16, // reduced from 24
-    paddingBottom: 16, // add a little bottom padding for visibility
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   footerText: {
-    color: '#666',
+    color: '#B0BEC5',
     fontSize: 14,
   },
   signUpText: {
-    color: '#2196F3',
+    color: '#64B5F6',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

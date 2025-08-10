@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform, SafeAreaView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { AuthContext } from '../context/AuthContext';
 import { upsertUserProfile } from '../services/api';
@@ -141,9 +141,10 @@ const ProfileSetupScreen = ({ navigation }) => {
           onChangeText={(text) => setProfile({ ...profile, age: text })}
           placeholder="Enter your age"
           keyboardType="numeric"
+          placeholderTextColor="#B0BEC5"
         />
       </View>
-
+ 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Phone Number (Optional)</Text>
         <TextInput
@@ -152,9 +153,10 @@ const ProfileSetupScreen = ({ navigation }) => {
           onChangeText={(text) => setProfile({ ...profile, phoneNumber: text })}
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
+          placeholderTextColor="#B0BEC5"
         />
       </View>
-
+ 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Education Level</Text>
         <View style={styles.pickerWrapper}>
@@ -165,16 +167,16 @@ const ProfileSetupScreen = ({ navigation }) => {
             itemStyle={Platform.OS === 'ios' ? styles.pickerItemIOS : {}}
           >
             {educationOptions.map((option) => (
-              <Picker.Item 
-                key={option.value} 
-                label={option.label} 
+              <Picker.Item
+                key={option.value}
+                label={option.label}
                 value={option.value}
               />
             ))}
           </Picker>
         </View>
       </View>
-
+ 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Preferred Language</Text>
         <View style={styles.pickerWrapper}>
@@ -185,16 +187,16 @@ const ProfileSetupScreen = ({ navigation }) => {
             itemStyle={Platform.OS === 'ios' ? styles.pickerItemIOS : {}}
           >
             {languageOptions.map((option) => (
-              <Picker.Item 
-                key={option.value} 
-                label={option.label} 
+              <Picker.Item
+                key={option.value}
+                label={option.label}
                 value={option.value}
               />
             ))}
           </Picker>
         </View>
       </View>
-
+ 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Visa Status</Text>
         <View style={styles.pickerWrapper}>
@@ -205,9 +207,9 @@ const ProfileSetupScreen = ({ navigation }) => {
             itemStyle={Platform.OS === 'ios' ? styles.pickerItemIOS : {}}
           >
             {visaStatusOptions.map((option) => (
-              <Picker.Item 
-                key={option.value} 
-                label={option.label} 
+              <Picker.Item
+                key={option.value}
+                label={option.label}
                 value={option.value}
               />
             ))}
@@ -216,7 +218,7 @@ const ProfileSetupScreen = ({ navigation }) => {
       </View>
     </View>
   );
-
+ 
   const renderStep2 = () => (
     <>
       <Text style={styles.stepTitle}>Work & Income</Text>
@@ -227,10 +229,10 @@ const ProfileSetupScreen = ({ navigation }) => {
           placeholder="Enter your occupation"
           value={profile.occupation}
           onChangeText={(text) => setProfile(prev => ({ ...prev, occupation: text }))}
-          placeholderTextColor="#666"
+          placeholderTextColor="#B0BEC5"
         />
       </View>
-
+ 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Monthly Income *</Text>
         <TextInput
@@ -239,12 +241,12 @@ const ProfileSetupScreen = ({ navigation }) => {
           value={profile.monthlyIncome}
           onChangeText={(text) => setProfile(prev => ({ ...prev, monthlyIncome: text }))}
           keyboardType="numeric"
-          placeholderTextColor="#666"
+          placeholderTextColor="#B0BEC5"
         />
       </View>
     </>
   );
-
+ 
   const renderStep3 = () => (
     <>
       <Text style={styles.stepTitle}>Financial Profile</Text>
@@ -258,16 +260,16 @@ const ProfileSetupScreen = ({ navigation }) => {
             itemStyle={Platform.OS === 'ios' ? styles.pickerItemIOS : {}}
           >
             {experienceOptions.map(option => (
-              <Picker.Item 
-                key={option.value} 
-                label={option.label} 
+              <Picker.Item
+                key={option.value}
+                label={option.label}
                 value={option.value}
               />
             ))}
           </Picker>
         </View>
       </View>
-
+ 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Financial Goals (Select all that apply) *</Text>
         <View style={styles.goalsContainer}>
@@ -280,7 +282,7 @@ const ProfileSetupScreen = ({ navigation }) => {
               ]}
               onPress={() => toggleGoal(goal)}
             >
-              <Text 
+              <Text
                 style={[
                   styles.goalChipText,
                   profile.financialGoals.includes(goal) && styles.goalChipTextSelected
@@ -294,31 +296,31 @@ const ProfileSetupScreen = ({ navigation }) => {
       </View>
     </>
   );
-
+ 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content}>
         <Text style={styles.title}>Complete Your Profile</Text>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             {[1, 2, 3].map((s) => (
-              <View 
-                key={s} 
+              <View
+                key={s}
                 style={[
                   styles.progressStep,
                   s <= step && styles.progressStepActive
-                ]} 
+                ]}
               />
             ))}
           </View>
           <Text style={styles.progressText}>Step {step} of 3</Text>
         </View>
-
+ 
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
       </ScrollView>
-
+ 
       <View style={styles.buttonContainer}>
         {step > 1 && (
           <TouchableOpacity
@@ -337,14 +339,14 @@ const ProfileSetupScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#244662',
   },
   content: {
     flex: 1,
@@ -352,10 +354,11 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 24,
+    letterSpacing: 0.5,
   },
   progressContainer: {
     marginBottom: 32,
@@ -367,46 +370,58 @@ const styles = StyleSheet.create({
   },
   progressStep: {
     flex: 1,
-    height: 4,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: '#546E7A',
+    borderRadius: 3,
   },
   progressStepActive: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#64B5F6',
   },
   progressText: {
-    color: '#666',
+    color: '#B0BEC5',
     fontSize: 14,
+    fontWeight: '500',
   },
   stepTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2c3e50',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 24,
+    letterSpacing: 0.5,
   },
   inputContainer: {
     marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#2c3e50',
+    fontWeight: '600',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#E3F2FD',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   pickerWrapper: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#E3F2FD',
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     ...Platform.select({
       android: {
         overflow: 'hidden',
@@ -421,7 +436,7 @@ const styles = StyleSheet.create({
       android: {
         height: 50,
         width: '100%',
-        color: '#2c3e50',
+        color: '#1A237E',
       },
       ios: {
         width: '100%',
@@ -434,7 +449,7 @@ const styles = StyleSheet.create({
   pickerItemIOS: {
     fontSize: 16,
     height: 120,
-    color: '#2c3e50',
+    color: '#1A237E',
   },
   inputGroup: {
     marginBottom: 16,
@@ -446,53 +461,64 @@ const styles = StyleSheet.create({
   },
   goalChip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#E3F2FD',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   goalChipSelected: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#3F51B5',
+    borderColor: '#3F51B5',
   },
   goalChipText: {
-    color: '#2c3e50',
+    color: '#1A237E',
     fontSize: 14,
+    fontWeight: '500',
   },
   goalChipTextSelected: {
-    color: 'white',
+    color: '#FFFFFF',
   },
   buttonContainer: {
     flexDirection: 'row',
     gap: 12,
     padding: 24,
-    backgroundColor: 'white',
+    backgroundColor: '#1A237E',
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: '#3F51B5',
   },
   button: {
     flex: 1,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   nextButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3F51B5',
   },
   backButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#64B5F6',
   },
   buttonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
   backButtonText: {
-    color: '#4CAF50',
+    color: '#64B5F6',
   },
 });
-
+ 
 export default ProfileSetupScreen;
