@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
 export default function IncomeTrackerScreen() {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
   const [entries, setEntries] = useState([]);
@@ -57,7 +59,7 @@ export default function IncomeTrackerScreen() {
       setSource('');
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to add entry');
+      Alert.alert(t('error'), 'Failed to add entry');
     }
   };
 
@@ -95,7 +97,7 @@ export default function IncomeTrackerScreen() {
       setSource('');
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to update entry');
+      Alert.alert(t('error'), 'Failed to update entry');
     }
   };
 

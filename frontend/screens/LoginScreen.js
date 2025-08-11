@@ -33,17 +33,17 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('error'), t('login.validation.fillFields'));
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      Alert.alert(t('error'), t('login.validation.invalidEmail'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Alert.alert(t('error'), t('login.validation.passwordLength'));
       return;
     }
 
@@ -52,17 +52,17 @@ export default function LoginScreen({ navigation }) {
       // Fetch user profile by email
       const userProfile = await getUserProfileByEmail(email);
       if (!userProfile) {
-        Alert.alert('Login Failed', 'No account found with this email.');
+        Alert.alert('Login Failed', t('login.error.noAccount'));
         setLoading(false);
         return;
       }
       if (!userProfile.password) {
-        Alert.alert('Login Failed', 'This account does not have a password set.');
+        Alert.alert('Login Failed', t('login.error.noPassword'));
         setLoading(false);
         return;
       }
       if (userProfile.password !== password) {
-        Alert.alert('Login Failed', 'Incorrect password.');
+        Alert.alert('Login Failed', t('login.error.incorrectPassword'));
         setLoading(false);
         return;
       }
@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }) {
       await login(userData);
       navigation.replace('Home');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to login');
+      Alert.alert(t('error'), error.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -91,12 +91,12 @@ export default function LoginScreen({ navigation }) {
             resizeMode="contain"
           />
           <Text style={styles.appName}>FinWiz</Text>
-          <Text style={styles.tagline}>Your Smart Financial Assistant</Text>
+          <Text style={styles.tagline}>{t('login.subtitle')}</Text>
         </View>
  
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('email')}</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -110,7 +110,7 @@ export default function LoginScreen({ navigation }) {
           </View>
  
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('password')}</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your password"
@@ -122,7 +122,7 @@ export default function LoginScreen({ navigation }) {
           </View>
  
           <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
           </TouchableOpacity>
  
           <TouchableOpacity
@@ -131,7 +131,7 @@ export default function LoginScreen({ navigation }) {
             disabled={loading}
           >
             <Text style={styles.loginButtonText}>
-              {loading ? 'Logging in...' : t('login')}
+              {loading ? t('loading') : t('login')}
             </Text>
           </TouchableOpacity>
  
@@ -148,9 +148,9 @@ export default function LoginScreen({ navigation }) {
         </View>
  
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={styles.footerText}>{t('login.noAccount')} </Text>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={styles.signUpText}>Sign Up</Text>
+            <Text style={styles.signUpText}>{t('login.signUpNow')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

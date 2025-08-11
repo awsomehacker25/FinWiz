@@ -23,22 +23,22 @@ export default function SignUpScreen({ navigation }) {
 
   const validateForm = () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('error'), t('login.validation.fillFields'));
       return false;
     }
 
     if (!validateEmail(formData.email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      Alert.alert(t('error'), t('login.validation.invalidEmail'));
       return false;
     }
 
     if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Alert.alert(t('error'), t('login.validation.passwordLength'));
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('error'), t('signup.validation.passwordMismatch'));
       return false;
     }
 
@@ -69,7 +69,7 @@ export default function SignUpScreen({ navigation }) {
         password: formData.password // Store password in user profile
       });
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to create account');
+      Alert.alert(t('error'), error.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -89,13 +89,13 @@ export default function SignUpScreen({ navigation }) {
             resizeMode="contain"
           />
           <Text style={styles.appName}>FinWiz</Text>
-          <Text style={styles.tagline}>Your Smart Financial Assistant</Text>
+          <Text style={styles.tagline}>{t('login.subtitle')}</Text>
         </View>
  
         <View style={styles.form}>
           <View style={styles.nameRow}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={styles.label}>{t('name')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter first name"
@@ -120,7 +120,7 @@ export default function SignUpScreen({ navigation }) {
           </View>
  
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('email')}</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -134,7 +134,7 @@ export default function SignUpScreen({ navigation }) {
           </View>
  
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('password')}</Text>
             <TextInput
               style={styles.input}
               placeholder="Create a password"
@@ -146,7 +146,7 @@ export default function SignUpScreen({ navigation }) {
           </View>
  
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={styles.label}>{t('signup.confirmPassword')}</Text>
             <TextInput
               style={styles.input}
               placeholder="Confirm your password"
@@ -163,7 +163,7 @@ export default function SignUpScreen({ navigation }) {
             disabled={loading}
           >
             <Text style={styles.signUpButtonText}>
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? t('loading') : t('signup.title')}
             </Text>
           </TouchableOpacity>
  
@@ -180,9 +180,9 @@ export default function SignUpScreen({ navigation }) {
         </View>
  
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={styles.footerText}>{t('signup.hasAccount')} </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginText}>Sign In</Text>
+            <Text style={styles.loginText}>{t('signup.loginNow')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

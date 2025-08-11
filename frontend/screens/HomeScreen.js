@@ -1,10 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated, StatusBar } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import api, { getLiteracyProgress } from '../services/api';
+import LanguageSelector from '../components/LanguageSelector';
  
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [summary, setSummary] = useState({
     totalIncome: 0,
     goalProgress: 0,
@@ -12,6 +15,7 @@ export default function HomeScreen({ navigation }) {
     communityThreads: 0
   });
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
  
   useEffect(() => {
     loadSummaryData();
@@ -69,15 +73,15 @@ export default function HomeScreen({ navigation }) {
   const handleLogout = () => {
     setProfileModalVisible(false);
     Alert.alert(
-      'Logout',
+      t('logout'),
       'Are you sure you want to logout?',
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('logout'),
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -118,7 +122,17 @@ export default function HomeScreen({ navigation }) {
  
           <View style={styles.sidebarMenu}>
             <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Profile Settings</Text>
+              <Text style={styles.menuItemText}>{t('profile')} {t('settings')}</Text>
+            </TouchableOpacity>
+           
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                setProfileModalVisible(false);
+                setLanguageSelectorVisible(true);
+              }}
+            >
+              <Text style={styles.menuItemText}>{t('language')}</Text>
             </TouchableOpacity>
            
             <TouchableOpacity style={styles.menuItem}>
@@ -136,7 +150,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.menuDivider} />
            
             <TouchableOpacity style={styles.logoutMenuItem} onPress={handleLogout}>
-              <Text style={styles.logoutMenuItemText}>Logout</Text>
+              <Text style={styles.logoutMenuItemText}>{t('logout')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -187,7 +201,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeText}>Welcome back,</Text>
+              <Text style={styles.welcomeText}>{t('welcome')},</Text>
               <Text style={styles.nameText}>{user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}</Text>
             </View>
             <TouchableOpacity style={styles.profileButton} onPress={() => setProfileModalVisible(true)}>
@@ -203,10 +217,10 @@ export default function HomeScreen({ navigation }) {
         <ProfileSidebar />
  
         <View style={styles.dashboardSection}>
-          <Text style={styles.sectionTitle}>Financial Overview</Text>
+          <Text style={styles.sectionTitle}>{t('home.title')}</Text>
           <View style={styles.grid}>
             <DashboardCard
-              title="Total Income"
+              title={t('home.totalIncome')}
               value={`$${summary.totalIncome.toFixed(2)}`}
               subtitle="This month"
               icon="💰"
@@ -216,7 +230,7 @@ export default function HomeScreen({ navigation }) {
             />
            
             <DashboardCard
-              title="Savings Goals"
+              title={t('home.goalProgress')}
               value={`${Math.round(summary.goalProgress)}%`}
               subtitle="Overall progress"
               icon="🎯"
@@ -226,7 +240,7 @@ export default function HomeScreen({ navigation }) {
             />
  
             <DashboardCard
-              title="Financial Literacy"
+              title={t('home.lessonsCompleted')}
               value={summary.lessonsCompleted.toString()}
               subtitle="Lessons completed"
               icon="📚"
@@ -236,7 +250,7 @@ export default function HomeScreen({ navigation }) {
             />
  
             <DashboardCard
-              title="Community"
+              title={t('home.communityThreads')}
               value={summary.communityThreads.toString()}
               subtitle="Active discussions"
               icon="💬"
@@ -248,10 +262,10 @@ export default function HomeScreen({ navigation }) {
         </View>
  
         <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
           <View style={styles.quickActionsContainer}>
             <QuickActionButton
-              title="Track New Income"
+              title={t('home.trackIncome')}
               subtitle="Record your latest earnings"
               icon="➕"
               color="#2E7D32"
@@ -259,7 +273,7 @@ export default function HomeScreen({ navigation }) {
             />
            
             <QuickActionButton
-              title="Set New Savings Goal"
+              title={t('home.setGoals')}
               subtitle="Create a new financial target"
               icon="🎯"
               color="#1565C0"
@@ -267,7 +281,7 @@ export default function HomeScreen({ navigation }) {
             />
            
             <QuickActionButton
-              title="Start New Lesson"
+              title={t('home.learnFinance')}
               subtitle="Learn about personal finance"
               icon="📖"
               color="#6A1B9A"
@@ -275,7 +289,7 @@ export default function HomeScreen({ navigation }) {
             />
  
             <QuickActionButton
-              title="Ask Community Question"
+              title={t('home.joinCommunity')}
               subtitle="Get help from others"
               icon="💭"
               color="#E65100"
@@ -286,6 +300,15 @@ export default function HomeScreen({ navigation }) {
  
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      
+      <LanguageSelector 
+        visible={languageSelectorVisible}
+        onClose={() => setLanguageSelectorVisible(false)}
+        onLanguageChange={() => {
+          // Reload data after language change to show updated UI
+          loadSummaryData();
+        }}
+      />
     </View>
   );
 }
