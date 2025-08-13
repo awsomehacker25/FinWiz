@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView, SafeAreaView, Image } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { getUserProfileByEmail } from '../services/api';
 
@@ -142,7 +143,7 @@ export default function LoginScreen({ navigation }) {
           </View>
  
           <TouchableOpacity style={styles.socialButton}>
-            <Text style={styles.socialIcon}>G</Text>
+            <MaterialIcons name="login" size={20} color="#3B82F6" />
             <Text style={styles.socialButtonText}>Continue with Google</Text>
           </TouchableOpacity>
         </View>
@@ -161,7 +162,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   scrollContent: {
     flexGrow: 1,
@@ -199,43 +200,39 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#cfe0ee',
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    backgroundColor: '#1f4a62',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E3F2FD',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: '#2a5f7b',
+    padding: 12,
+    fontSize: 16,
+    color: '#e9f2f9',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
   },
   forgotPasswordText: {
-    color: '#64B5F6',
+    color: '#3B82F6',
     fontSize: 14,
     fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#3F51B5',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+    padding: 12,
     alignItems: 'center',
     marginTop: 8,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 2,
   },
   loginButtonDisabled: {
-    backgroundColor: '#7986CB',
+    backgroundColor: '#88a2b6',
   },
   loginButtonText: {
     color: 'white',
@@ -260,27 +257,22 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 8,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E3F2FD',
+    borderColor: '#2a5f7b',
     gap: 12,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  socialIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#DB4437',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   socialButtonText: {
-    color: '#1A237E',
+    color: '#cfe0ee',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -293,11 +285,11 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   footerText: {
-    color: '#B0BEC5',
+    color: '#cfe0ee',
     fontSize: 14,
   },
   signUpText: {
-    color: '#64B5F6',
+    color: '#3B82F6',
     fontSize: 14,
     fontWeight: '600',
   },

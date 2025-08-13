@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function IncomeTrackerScreen() {
   const [amount, setAmount] = useState('');
@@ -123,6 +124,7 @@ export default function IncomeTrackerScreen() {
       ]
     );
   };
+
   const getTotalIncome = () => {
     return entries.reduce((total, entry) => total + (entry.amount || 0), 0);
   };
@@ -149,7 +151,7 @@ export default function IncomeTrackerScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>💰 Income Tracker</Text>
+          <Text style={styles.title}>Income Tracker</Text>
           <View style={styles.totalCard}>
             <Text style={styles.totalLabel}>Total Income</Text>
             <Text style={styles.totalAmount}>${getTotalIncome().toFixed(2)}</Text>
@@ -157,27 +159,30 @@ export default function IncomeTrackerScreen() {
         </View>
  
         <View style={styles.addEntryCard}>
-          <Text style={styles.cardTitle}>➕ Add New Entry</Text>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name="add-circle" size={24} color="#3B82F6" />
+            <Text style={styles.cardTitle}>Add New Entry</Text>
+          </View>
           <View style={styles.inputContainer}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>💵 Amount</Text>
+              <Text style={styles.inputLabel}>Amount</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter amount"
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
-                placeholderTextColor="#8BA3B3"
+                placeholderTextColor="#88a2b6"
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>📝 Source</Text>
+              <Text style={styles.inputLabel}>Source</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g., Uber, Cash, Salary"
                 value={source}
                 onChangeText={setSource}
-                placeholderTextColor="#8BA3B3"
+                placeholderTextColor="#88a2b6"
               />
             </View>
             <View style={styles.buttonContainer}>
@@ -201,17 +206,22 @@ export default function IncomeTrackerScreen() {
                   style={[styles.button, styles.addButton]}
                   onPress={addEntry}
                 >
-                  <Text style={styles.buttonText}>➕ Add Entry</Text>
+                  <MaterialIcons name="add" size={20} color="white" style={{ marginRight: 8 }} />
+                  <Text style={styles.buttonText}>Add Entry</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
         </View>
- 
+
         <View style={styles.entriesSection}>
-          <Text style={styles.sectionTitle}>📊 Income History</Text>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="history" size={24} color="#cfe0ee" />
+            <Text style={styles.sectionTitle}>Income History</Text>
+          </View>
           {entries.length === 0 ? (
             <View style={styles.emptyState}>
+              <MaterialIcons name="account-balance-wallet" size={48} color="#88a2b6" />
               <Text style={styles.emptyStateText}>No income entries yet</Text>
               <Text style={styles.emptyStateSubtext}>Add your first income entry above</Text>
             </View>
@@ -233,13 +243,13 @@ export default function IncomeTrackerScreen() {
                         style={[styles.actionButton, styles.editButton]}
                         onPress={() => startEditing(item)}
                       >
-                        <Text style={styles.actionButtonText}>Edit</Text>
+                        <MaterialIcons name="edit" size={16} color="white" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.deleteButton]}
                         onPress={() => deleteEntry(item)}
                       >
-                        <Text style={styles.actionButtonText}>Delete</Text>
+                        <MaterialIcons name="delete" size={16} color="white" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -270,62 +280,65 @@ export default function IncomeTrackerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    color: '#ffffff',
+    marginBottom: 12,
   },
   totalCard: {
-    backgroundColor: '#1A237E',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   totalLabel: {
-    fontSize: 16,
-    color: '#B0BEC5',
+    fontSize: 14,
+    color: '#cfe0ee',
     fontWeight: '500',
     marginBottom: 4,
   },
   totalAmount: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#64B5F6',
-    letterSpacing: 1,
+    color: '#4CAF50',
+    letterSpacing: 0.5,
   },
   addEntryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A237E',
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   inputContainer: {
     gap: 16,
@@ -336,20 +349,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1A237E',
+    color: '#cfe0ee',
   },
   input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    backgroundColor: '#1f4a62',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E3F2FD',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: '#2a5f7b',
+    padding: 12,
+    fontSize: 16,
+    color: '#e9f2f9',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -358,94 +367,95 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    padding: 12,
+    borderRadius: 8,
   },
   addButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
   },
   updateButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
   },
   cancelButton: {
     backgroundColor: '#546E7A',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
   entriesSection: {
     flex: 1,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
-    letterSpacing: 0.5,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 40,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 32,
     alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1A237E',
+    color: '#ffffff',
+    marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#cfe0ee',
     textAlign: 'center',
   },
   list: {
     flex: 1,
   },
   entryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   entryDateContainer: {
     flex: 1,
   },
   entryDate: {
-    color: '#1A237E',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
   },
   entryTime: {
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontSize: 14,
-    fontWeight: '500',
   },
   entryActions: {
     flexDirection: 'row',
@@ -453,24 +463,16 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: 6,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
   },
   deleteButton: {
-    backgroundColor: '#F44336',
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    backgroundColor: '#f44336',
   },
   entryDetails: {
     flexDirection: 'row',
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   },
   sourceLabel: {
     fontSize: 12,
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontWeight: '500',
     marginBottom: 4,
     textTransform: 'uppercase',
@@ -494,19 +496,19 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 12,
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontWeight: '500',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   entrySource: {
-    fontSize: 18,
-    color: '#1A237E',
+    fontSize: 16,
+    color: '#ffffff',
     fontWeight: '600',
   },
   entryAmount: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4CAF50',
     letterSpacing: 0.5,

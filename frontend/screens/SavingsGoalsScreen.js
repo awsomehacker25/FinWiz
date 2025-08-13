@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
  
 function ProgressBar({ progress }) {
   return (
@@ -170,16 +171,16 @@ export default function SavingsGoalsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>🎯 Savings Goals</Text>
+          <Text style={styles.title}>Savings Goals</Text>
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryLabel, { color: '#B0BEC5' }]}>Total Saved</Text>
-                <Text style={[styles.summaryAmount, { color: '#4CAF50' }]}>${getTotalSavings().toFixed(2)}</Text>
+                <Text style={styles.summaryLabel}>Total Saved</Text>
+                <Text style={styles.summaryAmount}>${getTotalSavings().toFixed(2)}</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryLabel, { color: '#B0BEC5' }]}>Total Target</Text>
-                <Text style={[styles.summaryTarget, { color: '#64B5F6' }]}>${getTotalTarget().toFixed(2)}</Text>
+                <Text style={styles.summaryLabel}>Total Target</Text>
+                <Text style={styles.summaryTarget}>${getTotalTarget().toFixed(2)}</Text>
               </View>
             </View>
             <View style={styles.overallProgress}>
@@ -191,7 +192,10 @@ export default function SavingsGoalsScreen() {
         </View>
  
         <View style={styles.addGoalCard}>
-          <Text style={styles.cardTitle}>➕ Add New Goal</Text>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name="add-circle" size={24} color="#3B82F6" />
+            <Text style={styles.cardTitle}>Add New Goal</Text>
+          </View>
           <View style={styles.inputContainer}>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Goal Name</Text>
@@ -200,7 +204,7 @@ export default function SavingsGoalsScreen() {
                 placeholder="e.g., Emergency Fund, Vacation"
                 value={goalName}
                 onChangeText={setGoalName}
-                placeholderTextColor="#B0BEC5"
+                placeholderTextColor="#88a2b6"
               />
             </View>
             <View style={styles.inputGroup}>
@@ -211,7 +215,7 @@ export default function SavingsGoalsScreen() {
                 value={target}
                 onChangeText={setTarget}
                 keyboardType="numeric"
-                placeholderTextColor="#B0BEC5"
+                placeholderTextColor="#88a2b6"
               />
             </View>
             <View style={styles.inputGroup}>
@@ -222,7 +226,7 @@ export default function SavingsGoalsScreen() {
                 value={saved}
                 onChangeText={setSaved}
                 keyboardType="numeric"
-                placeholderTextColor="#B0BEC5"
+                placeholderTextColor="#88a2b6"
               />
             </View>
             <View style={styles.buttonContainer}>
@@ -246,17 +250,22 @@ export default function SavingsGoalsScreen() {
                   style={[styles.button, styles.addButton]}
                   onPress={addGoal}
                 >
-                  <Text style={styles.buttonText}>➕ Add Goal</Text>
+                  <MaterialIcons name="add" size={20} color="white" style={{ marginRight: 8 }} />
+                  <Text style={styles.buttonText}>Add Goal</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
         </View>
- 
+
         <View style={styles.goalsSection}>
-          <Text style={styles.sectionTitle}>📊 Your Goals</Text>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="trending-up" size={24} color="#cfe0ee" />
+            <Text style={styles.sectionTitle}>Your Goals</Text>
+          </View>
           {goals.length === 0 ? (
             <View style={styles.emptyState}>
+              <MaterialIcons name="savings" size={48} color="#88a2b6" />
               <Text style={styles.emptyStateText}>No savings goals yet</Text>
               <Text style={styles.emptyStateSubtext}>Create your first savings goal above</Text>
             </View>
@@ -278,13 +287,13 @@ export default function SavingsGoalsScreen() {
                         style={[styles.actionButton, styles.editButton]}
                         onPress={() => startEditing(item)}
                       >
-                        <Text style={styles.actionButtonText}>Edit</Text>
+                        <MaterialIcons name="edit" size={16} color="white" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.deleteButton]}
                         onPress={() => deleteGoal(item)}
                       >
-                        <Text style={styles.actionButtonText}>Delete</Text>
+                        <MaterialIcons name="delete" size={16} color="white" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -315,35 +324,34 @@ export default function SavingsGoalsScreen() {
     </SafeAreaView>
   );
 }
- 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    color: '#ffffff',
+    marginBottom: 12,
   },
   summaryCard: {
-    backgroundColor: '#1A237E',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -356,50 +364,54 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#B0BEC5',
+    color: '#cfe0ee',
     fontWeight: '500',
     marginBottom: 4,
   },
   summaryAmount: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#4CAF50',
     letterSpacing: 0.5,
   },
   summaryTarget: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#64B5F6',
+    color: '#3B82F6',
     letterSpacing: 0.5,
   },
   overallProgress: {
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#3F51B5',
+    borderTopColor: '#224459',
   },
   overallProgressText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#ffffff',
     fontWeight: '600',
   },
   addGoalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A237E',
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   inputContainer: {
     gap: 16,
@@ -410,20 +422,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1A237E',
+    color: '#cfe0ee',
   },
   input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    backgroundColor: '#1f4a62',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E3F2FD',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: '#2a5f7b',
+    padding: 12,
+    fontSize: 16,
+    color: '#e9f2f9',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -432,94 +440,96 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    padding: 12,
+    borderRadius: 8,
   },
   addButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
   },
   updateButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#3B82F6',
   },
   cancelButton: {
-    backgroundColor: '#9E9E9E',
+    backgroundColor: '#546E7A',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
   goalsSection: {
     flex: 1,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
-    letterSpacing: 0.5,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 40,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 32,
     alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1A237E',
+    color: '#ffffff',
+    marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#cfe0ee',
     textAlign: 'center',
   },
   list: {
     flex: 1,
   },
   goalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   goalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   goalInfo: {
     flex: 1,
     marginRight: 16,
   },
   goalName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1A237E',
+    color: '#ffffff',
     marginBottom: 4,
   },
   goalDate: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontWeight: '500',
   },
   goalActions: {
@@ -528,24 +538,16 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: 6,
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#3B82F6',
   },
   deleteButton: {
-    backgroundColor: '#F44336',
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    backgroundColor: '#f44336',
   },
   goalDetails: {
     gap: 16,
@@ -560,24 +562,24 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 12,
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontWeight: '500',
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   savedAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
   targetAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#1A237E',
+    color: '#ffffff',
   },
   remainingAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FF9800',
   },
@@ -588,19 +590,19 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     flex: 1,
-    height: 12,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 6,
+    height: 8,
+    backgroundColor: '#224459',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#4CAF50',
-    borderRadius: 6,
+    borderRadius: 4,
   },
   progressText: {
     fontSize: 14,
-    color: '#1A237E',
+    color: '#cfe0ee',
     fontWeight: '600',
     minWidth: 45,
     textAlign: 'right',

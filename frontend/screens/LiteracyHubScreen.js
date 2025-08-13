@@ -818,23 +818,23 @@ export default function LiteracyHubScreen() {
       <Text style={styles.title}>Financial Literacy Hub</Text>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
+          <Text style={styles.statLabel}>COMPLETED</Text>
           <Text style={styles.statValue}>{Math.round(calculateProgress())}%</Text>
-          <Text style={styles.statLabel}>Completed</Text>
         </View>
         <View style={styles.statCard}>
+          <Text style={styles.statLabel}>POINTS</Text>
           <Text style={styles.statValue}>{calculateTotalPoints()}</Text>
-          <Text style={styles.statLabel}>Points Earned</Text>
         </View>
         <View style={styles.statCard}>
+          <Text style={styles.statLabel}>QUESTIONS</Text>
           <Text style={styles.statValue}>{questionsAnswered}</Text>
-          <Text style={styles.statLabel}>Questions Answered</Text>
         </View>
         <TouchableOpacity
           style={styles.resetButton}
           onPress={handleResetProgress}
           accessibilityLabel="Reset Progress"
         >
-          <MaterialIcons name="refresh" size={20} color="#E53935" />
+          <MaterialIcons name="refresh" size={18} color="#FF6B6B" />
           <Text style={styles.resetButtonText}>Reset</Text>
         </TouchableOpacity>
       </View>
@@ -851,59 +851,62 @@ export default function LiteracyHubScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#17384a',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2c3e50',
-    margin: 20,
+    color: '#ffffff',
+    margin: 16,
   },
   statsContainer: {
     flexDirection: 'row',
-    padding: 20,
-    gap: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 12,
+    alignItems: 'center',
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'white',
-    padding: 16,
+    backgroundColor: '#204d63',
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.15,
     shadowRadius: 2,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    fontSize: 12,
+    color: '#cfe0ee',
+    marginBottom: 4,
+    fontWeight: '700',
   },
   list: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   lessonCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#0f2a3a',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
   },
   lessonCardCompleted: {
     borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
+    borderLeftColor: '#3B82F6',
   },
   lessonHeader: {
     flexDirection: 'row',
@@ -917,16 +920,16 @@ const styles = StyleSheet.create({
   lessonTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#ffffff',
   },
   lessonDuration: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#cfe0ee',
     marginTop: 4,
   },
   lessonDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#dbe8f1',
     marginBottom: 16,
   },
   lessonFooter: {
@@ -936,24 +939,28 @@ const styles = StyleSheet.create({
   },
   pointsText: {
     fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: '500',
+    color: '#7cc4ff',
+    fontWeight: '700',
   },
   startButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   startButtonCompleted: {
-    backgroundColor: '#81C784',
+    backgroundColor: '#647DEE',
   },
   startButtonText: {
     color: 'white',
-    fontWeight: '500',
+    fontWeight: '700',
   },
   completedBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -966,20 +973,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backButton: {
-    padding: 20,
+    padding: 16,
   },
   backButtonText: {
-    color: '#2196F3',
+    color: '#3B82F6',
     fontSize: 16,
   },
   lessonContainer: {
-    padding: 20,
+    padding: 16,
   },
   lessonPageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 20,
+    color: '#ffffff',
+    marginBottom: 16,
   },
   progressIndicator: {
     flexDirection: 'row',
@@ -990,29 +997,29 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#224459',
   },
   progressDotActive: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     width: 24,
   },
   progressDotCompleted: {
-    backgroundColor: '#81C784',
+    backgroundColor: '#647DEE',
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#ffffff',
     marginBottom: 16,
   },
   sectionContent: {
     fontSize: 16,
-    color: '#34495e',
+    color: '#dbe8f1',
     lineHeight: 24,
     marginBottom: 24,
   },
   quizButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#3B82F6',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -1028,37 +1035,38 @@ const styles = StyleSheet.create({
   quizQuestion: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#ffffff',
     marginBottom: 16,
   },
   quizOption: {
-    backgroundColor: 'white',
+    backgroundColor: '#14384c',
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#224459',
   },
   quizOptionSelected: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#4CAF50',
+    backgroundColor: '#243a73',
+    borderColor: '#3B82F6',
   },
   quizOptionText: {
     fontSize: 16,
-    color: '#2c3e50',
+    color: '#e9f2f9',
   },
   quizOptionTextSelected: {
-    color: '#4CAF50',
-    fontWeight: '500',
+    color: '#ffffff',
+    fontWeight: '700',
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
   submitButtonDisabled: {
-    backgroundColor: '#A5D6A7',
+    backgroundColor: '#3B82F6',
+    opacity: 0.6,
   },
   submitButtonText: {
     color: 'white',
@@ -1066,16 +1074,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   quizOptionCorrect: {
-    backgroundColor: '#C8E6C9',
-    borderColor: '#388E3C',
+    backgroundColor: '#1e7342',
+    borderColor: '#1e7342',
   },
   quizOptionIncorrect: {
-    backgroundColor: '#FFCDD2',
+    backgroundColor: '#7a2b2b',
     borderColor: '#D32F2F',
   },
   explanationText: {
     fontSize: 13,
-    color: '#616161',
+    color: '#cfe0ee',
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -1083,16 +1091,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E53935',
+    borderColor: '#FF6B6B',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 12,
+    paddingVertical: 8,
+    marginLeft: 8,
     alignSelf: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
   },
   resetButtonText: {
-    color: '#E53935',
+    color: '#FF6B6B',
     fontWeight: 'bold',
     marginLeft: 4,
     fontSize: 14,

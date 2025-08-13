@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform, SafeAreaView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { upsertUserProfile } from '../services/api';
 
@@ -346,7 +347,7 @@ const ProfileSetupScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   content: {
     flex: 1,
@@ -395,27 +396,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#cfe0ee',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    backgroundColor: '#1f4a62',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E3F2FD',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: '#2a5f7b',
+    padding: 12,
+    fontSize: 16,
+    color: '#e9f2f9',
   },
   pickerWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#1f4a62',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E3F2FD',
+    borderColor: '#2a5f7b',
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -436,7 +433,7 @@ const styles = StyleSheet.create({
       android: {
         height: 50,
         width: '100%',
-        color: '#1A237E',
+        color: '#e9f2f9',
       },
       ios: {
         width: '100%',
@@ -449,7 +446,7 @@ const styles = StyleSheet.create({
   pickerItemIOS: {
     fontSize: 16,
     height: 120,
-    color: '#1A237E',
+    color: '#e9f2f9',
   },
   inputGroup: {
     marginBottom: 16,
@@ -463,21 +460,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0f2a3a',
     borderWidth: 1,
-    borderColor: '#E3F2FD',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderColor: '#2a5f7b',
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   goalChipSelected: {
-    backgroundColor: '#3F51B5',
-    borderColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
   },
   goalChipText: {
-    color: '#1A237E',
+    color: '#cfe0ee',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -488,28 +485,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     padding: 24,
-    backgroundColor: '#1A237E',
+    backgroundColor: '#0f2a3a',
     borderTopWidth: 1,
-    borderTopColor: '#3F51B5',
+    borderTopColor: '#2a5f7b',
   },
   button: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 2,
   },
   nextButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
   },
   backButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#64B5F6',
+    borderColor: '#3B82F6',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -517,7 +514,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backButtonText: {
-    color: '#64B5F6',
+    color: '#3B82F6',
   },
 });
  

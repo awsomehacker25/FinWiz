@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import api, { editReply, deleteReply } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -16,6 +16,11 @@ export default function SupportCommunityScreen() {
   const [editingReply, setEditingReply] = useState({}); // { [replyId]: { threadId, body } }
   const [replyEditInputs, setReplyEditInputs] = useState({}); // { [replyId]: body }
   const [replyEditLoading, setReplyEditLoading] = useState({}); // { [replyId]: boolean }
+  // UI state for tabs, search, sorting and per-thread expansion
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'yours'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'mostReplies'
+  const [expandedThreads, setExpandedThreads] = useState({}); // { [threadId]: boolean }
 
   const processThreadData = (thread) => ({
     id: String(thread.id), // do not fallback to Date.now()
@@ -236,10 +241,86 @@ export default function SupportCommunityScreen() {
     });
   };
 
+  // Derived data for UI
+  const totalDiscussionsCount = threads.length;
+  const yourDiscussionsCount = useMemo(
+    () => threads.filter(t => t.userId === user?.email).length,
+    [threads, user?.email]
+  );
+
+  const displayedThreads = useMemo(() => {
+    const lower = searchQuery.trim().toLowerCase();
+    let list = threads;
+    if (activeTab === 'yours') {
+      list = list.filter(t => t.userId === user?.email);
+    }
+    if (lower) {
+      list = list.filter(t => t.title.toLowerCase().includes(lower) || t.body.toLowerCase().includes(lower));
+    }
+    list = [...list].sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return (b.replies?.length || 0) - (a.replies?.length || 0);
+    });
+    return list;
+  }, [threads, activeTab, searchQuery, sortBy, user?.email]);
+
+  const toggleExpanded = (threadId) => {
+    setExpandedThreads(prev => ({ ...prev, [threadId]: !prev[threadId] }));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Support & Community</Text>
-      
+
+      {/* Tabs row */}
+      <View style={styles.tabsRow}>
+        <TouchableOpacity
+          onPress={() => setActiveTab('all')}
+          style={[styles.tabPill, activeTab === 'all' && styles.tabPillActive]}
+        >
+          <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>DISCUSSIONS</Text>
+          <View style={[styles.countBadge, activeTab === 'all' && styles.countBadgeActive]}>
+            <Text style={styles.countBadgeText}>{totalDiscussionsCount}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setActiveTab('yours')}
+          style={[styles.tabPill, activeTab === 'yours' && styles.tabPillActive]}
+        >
+          <Text style={[styles.tabText, activeTab === 'yours' && styles.tabTextActive]}>YOURS</Text>
+          <View style={[styles.countBadge, activeTab === 'yours' && styles.countBadgeActive]}>
+            <Text style={styles.countBadgeText}>{yourDiscussionsCount}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Search + Sort row */}
+      <View style={styles.searchSortRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search discussions"
+          placeholderTextColor="#b9c8d6"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <View style={styles.sortPillsRow}>
+          <TouchableOpacity
+            onPress={() => setSortBy('newest')}
+            style={[styles.sortPill, sortBy === 'newest' && styles.sortPillActive]}
+          >
+            <Text style={[styles.sortPillText, sortBy === 'newest' && styles.sortPillTextActive]}>Newest</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setSortBy('mostReplies')}
+            style={[styles.sortPill, sortBy === 'mostReplies' && styles.sortPillActive]}
+          >
+            <Text style={[styles.sortPillText, sortBy === 'mostReplies' && styles.sortPillTextActive]}>Most Replies</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {!isCreating ? (
         <TouchableOpacity
           style={styles.createButton}
@@ -306,7 +387,7 @@ export default function SupportCommunityScreen() {
 
       <FlatList
         style={styles.list}
-        data={threads}
+        data={displayedThreads}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.threadCard}>
@@ -334,104 +415,112 @@ export default function SupportCommunityScreen() {
               </View>
               <Text style={styles.threadTitle}>{item.title}</Text>
               <Text style={styles.threadBody}>{item.body}</Text>
-              <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+              <Text style={{ color: '#cfe0ee', fontSize: 12, marginTop: 4 }}>
                 {item.createdBy || (item.userId ? `Created by: ${item.userId}` : 'Created by: Unknown')}
               </Text>
             </View>
-            {/* Replies Section */}
-            <View style={{ marginTop: 12 }}>
-              {item.replies.length > 0 && (
-                <View style={{ marginBottom: 8 }}>
-                  {item.replies.map((reply) => (
-                    <View key={reply.replyId} style={styles.replyCard}>
-                      {editingReply[reply.replyId] ? (
-                        <View style={styles.replyEditRow}>
-                          <TextInput
-                            style={styles.replyEditInput}
-                            value={replyEditInputs[reply.replyId]}
-                            onChangeText={text => setReplyEditInputs(prev => ({ ...prev, [reply.replyId]: text }))}
-                            editable={!replyEditLoading[reply.replyId]}
-                            placeholder="Edit your reply..."
-                            placeholderTextColor="#888"
-                          />
-                          <TouchableOpacity
-                            style={[styles.replyActionButton, styles.replySaveButton]}
-                            onPress={() => handleEditReply(item.id, reply.replyId)}
-                            disabled={replyEditLoading[reply.replyId] || !(replyEditInputs[reply.replyId]?.trim())}
-                          >
-                            <MaterialIcons name="check" size={20} color="#fff" />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.replyActionButton, styles.replyCancelButton]}
-                            onPress={() => cancelEditingReply(reply.replyId)}
-                            disabled={replyEditLoading[reply.replyId]}
-                          >
-                            <MaterialIcons name="close" size={20} color="#fff" />
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <>
-                          <View
-                            style={[
-                              styles.replyBodyRow,
-                              reply.userId !== user?.email && { marginBottom: 8 },
-                            ]}
-                          >
-                            <Text style={styles.replyBody}>{reply.body}</Text>
-                            {reply.userId === user?.email && (
-                              <View style={styles.replyActionsRow}>
-                                <TouchableOpacity
-                                  style={[styles.replyActionButton, styles.replyEditButton]}
-                                  onPress={() => startEditingReply(item.id, reply)}
-                                  disabled={replyEditLoading[reply.replyId]}
-                                >
-                                  <MaterialIcons name="edit" size={18} color="#fff" />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={[styles.replyActionButton, styles.replyDeleteButton]}
-                                  onPress={() => handleDeleteReply(item.id, reply.replyId)}
-                                  disabled={replyEditLoading[reply.replyId]}
-                                >
-                                  <MaterialIcons name="delete" size={18} color="#fff" />
-                                </TouchableOpacity>
-                              </View>
-                            )}
-                          </View>
-                          <View style={styles.replyMetaRow}>
-                            <Text style={styles.replyUser}>{reply.userId}</Text>
-                            <Text style={styles.replyDot}>·</Text>
-                            <Text style={styles.replyDate}>{formatDate(reply.createdAt)}{reply.editedAt ? ' (edited)' : ''}</Text>
-                          </View>
-                        </>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              )}
-              {/* Add Reply Form */}
-              <View style={styles.replyInputContainer}>
-                <TextInput
-                  style={styles.replyInput}
-                  placeholder="Write a reply..."
-                  value={replyInputs[item.id] || ''}
-                  onChangeText={text => setReplyInputs(prev => ({ ...prev, [item.id]: text }))}
-                  editable={!replyLoading[item.id]}
-                  placeholderTextColor="#888"
-                />
-                <TouchableOpacity
-                  style={styles.replyButton}
-                  onPress={() => addReply(item.id)}
-                  disabled={replyLoading[item.id] || !(replyInputs[item.id]?.trim())}
-                >
-                  <Text style={styles.replyButtonText}>{replyLoading[item.id] ? '...' : 'Reply'}</Text>
-                </TouchableOpacity>
+            {/* Collapsible toggle */}
+            <TouchableOpacity style={styles.threadFooter} onPress={() => toggleExpanded(item.id)}>
+              <View style={styles.replyToggleRow}>
+                <Text style={styles.replyCount}>
+                  {item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'}
+                </Text>
+                <MaterialIcons name={expandedThreads[item.id] ? 'expand-less' : 'expand-more'} size={20} color="#cfe0ee" />
               </View>
-            </View>
-            <View style={styles.threadFooter}>
-              <Text style={styles.replyCount}>
-                {item.replies.length} {item.replies.length === 1 ? 'reply' : 'replies'}
-              </Text>
-            </View>
+            </TouchableOpacity>
+            {expandedThreads[item.id] && (
+              <View style={{ marginTop: 8 }}>
+                {item.replies.length > 0 && (
+                  <View style={{ marginBottom: 8 }}>
+                    {item.replies.map((reply) => (
+                      <View key={reply.replyId} style={styles.replyCard}>
+                        {editingReply[reply.replyId] ? (
+                          <View style={styles.replyEditRow}>
+                            <TextInput
+                              style={styles.replyEditInput}
+                              value={replyEditInputs[reply.replyId]}
+                              onChangeText={text => setReplyEditInputs(prev => ({ ...prev, [reply.replyId]: text }))}
+                              editable={!replyEditLoading[reply.replyId]}
+                              placeholder="Edit your reply..."
+                              placeholderTextColor="#88a2b6"
+                            />
+                            <TouchableOpacity
+                              style={[styles.replyActionButton, styles.replySaveButton]}
+                              onPress={() => handleEditReply(item.id, reply.replyId)}
+                              disabled={replyEditLoading[reply.replyId] || !(replyEditInputs[reply.replyId]?.trim())}
+                            >
+                              <MaterialIcons name="check" size={20} color="#fff" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.replyActionButton, styles.replyCancelButton]}
+                              onPress={() => cancelEditingReply(reply.replyId)}
+                              disabled={replyEditLoading[reply.replyId]}
+                            >
+                              <MaterialIcons name="close" size={20} color="#fff" />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <>
+                            <View
+                              style={[
+                                styles.replyBodyRow,
+                                reply.userId !== user?.email && { marginBottom: 8 },
+                              ]}
+                            >
+                              <Text style={styles.replyBody}>{reply.body}</Text>
+                              {reply.userId === user?.email && (
+                                <View style={styles.replyActionsRow}>
+                                  <TouchableOpacity
+                                    style={[styles.replyActionButton, styles.replyEditButton]}
+                                    onPress={() => startEditingReply(item.id, reply)}
+                                    disabled={replyEditLoading[reply.replyId]}
+                                  >
+                                    <MaterialIcons name="edit" size={18} color="#fff" />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[styles.replyActionButton, styles.replyDeleteButton]}
+                                    onPress={() => handleDeleteReply(item.id, reply.replyId)}
+                                    disabled={replyEditLoading[reply.replyId]}
+                                  >
+                                    <MaterialIcons name="delete" size={18} color="#fff" />
+                                  </TouchableOpacity>
+                                </View>
+                              )}
+                            </View>
+                            <View style={styles.replyMetaRow}>
+                              <Text style={styles.replyUser}>{reply.userId}</Text>
+                              <Text style={styles.replyDot}>·</Text>
+                              <Text style={styles.replyDate}>{formatDate(reply.createdAt)}{reply.editedAt ? ' (edited)' : ''}</Text>
+                            </View>
+                          </>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {/* Add Reply Form */}
+                <View style={styles.replyInputContainer}>
+                  <TextInput
+                    style={styles.replyInput}
+                    placeholder="Write a reply..."
+                    value={replyInputs[item.id] || ''}
+                    onChangeText={text => setReplyInputs(prev => ({ ...prev, [item.id]: text }))}
+                    editable={!replyLoading[item.id]}
+                    placeholderTextColor="#88a2b6"
+                  />
+                  <TouchableOpacity
+                    style={styles.replyButton}
+                    onPress={async () => {
+                      await addReply(item.id);
+                      setExpandedThreads(prev => ({ ...prev, [item.id]: true }));
+                    }}
+                    disabled={replyLoading[item.id] || !(replyInputs[item.id]?.trim())}
+                  >
+                    <Text style={styles.replyButtonText}>{replyLoading[item.id] ? '...' : 'Reply'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
         )}
       />
@@ -443,16 +532,93 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#17384a',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#2c3e50',
+    marginBottom: 12,
+    color: '#ffffff',
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  tabPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#204d63',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  tabPillActive: {
+    backgroundColor: '#243a73',
+  },
+  tabText: {
+    color: '#cfe0ee',
+    fontWeight: '700',
+    fontSize: 12,
+    marginRight: 8,
+    letterSpacing: 0.4,
+  },
+  tabTextActive: {
+    color: '#ffffff',
+  },
+  countBadge: {
+    backgroundColor: '#0d3043',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  countBadgeActive: {
+    backgroundColor: '#0f1c5a',
+  },
+  countBadgeText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  searchSortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#1f4a62',
+    color: '#e9f2f9',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#2a5f7b',
+  },
+  sortPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sortPill: {
+    backgroundColor: '#273b59',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  sortPillActive: {
+    backgroundColor: '#2f3dbd',
+  },
+  sortPillText: {
+    color: '#cfe0ee',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  sortPillTextActive: {
+    color: '#ffffff',
   },
   createButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -469,7 +635,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#133142',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -483,15 +649,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#2c3e50',
+    color: '#ffffff',
   },
   input: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1f4a62',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#2a5f7b',
+    color: '#e9f2f9',
     marginBottom: 8,
   },
   titleInput: {
@@ -513,13 +680,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   postButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
   },
   updateButton: {
     backgroundColor: '#2196F3',
   },
   cancelButton: {
-    backgroundColor: '#9e9e9e',
+    backgroundColor: '#546E7A',
   },
   buttonText: {
     color: 'white',
@@ -530,14 +697,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   threadCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#0f2a3a',
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
   },
   threadHeader: {
@@ -549,7 +716,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   threadDate: {
-    color: '#666',
+    color: '#cfe0ee',
     fontSize: 14,
   },
   threadActions: {
@@ -562,7 +729,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   editButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#3B82F6',
   },
   deleteButton: {
     backgroundColor: '#f44336',
@@ -575,25 +742,30 @@ const styles = StyleSheet.create({
   threadTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#ffffff',
   },
   threadBody: {
     fontSize: 16,
-    color: '#34495e',
+    color: '#dbe8f1',
     lineHeight: 22,
   },
   threadFooter: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: '#224459',
+  },
+  replyToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   replyCount: {
-    color: '#666',
+    color: '#cfe0ee',
     fontSize: 14,
   },
   replyCard: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#14384c',
     borderRadius: 8,
     padding: 10,
     marginBottom: 6,
@@ -602,7 +774,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.08,
     shadowRadius: 2,
   },
   replyBodyRow: {
@@ -613,7 +785,7 @@ const styles = StyleSheet.create({
   },
   replyBody: {
     fontSize: 15,
-    color: '#333',
+    color: '#e6f0f6',
     flex: 1,
     marginRight: 8,
     marginBottom: 0, // remove any bottom margin
@@ -626,12 +798,13 @@ const styles = StyleSheet.create({
   },
   replyEditInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1f4a62',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: '#2a5f7b',
     padding: 8,
     fontSize: 15,
+    color: '#e9f2f9',
   },
   replyActionsRow: {
     flexDirection: 'row',
@@ -648,7 +821,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   replyEditButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#3B82F6',
   },
   replyDeleteButton: {
     backgroundColor: '#f44336',
@@ -672,18 +845,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   replyUser: {
-    color: '#2196F3',
+    color: '#7cc4ff',
     fontSize: 12,
     fontWeight: 'bold',
   },
   replyDot: {
-    color: '#888',
+    color: '#88a2b6',
     fontSize: 14,
     marginHorizontal: 2,
     fontWeight: 'bold',
   },
   replyDate: {
-    color: '#888',
+    color: '#88a2b6',
     fontSize: 12,
   },
   replyInputContainer: {
@@ -694,15 +867,16 @@ const styles = StyleSheet.create({
   },
   replyInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1f4a62',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#2a5f7b',
     padding: 8,
     fontSize: 15,
+    color: '#e9f2f9',
   },
   replyButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3B82F6',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,

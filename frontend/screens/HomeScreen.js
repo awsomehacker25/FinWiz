@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated, StatusBar } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
 import api, { getLiteracyProgress } from '../services/api';
  
 export default function HomeScreen({ navigation }) {
@@ -154,7 +155,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{title}</Text>
           <View style={[styles.cardIcon, { backgroundColor: color }]}>
-            <Text style={styles.cardIconText}>{icon}</Text>
+            <MaterialIcons name={icon} size={20} color="white" />
           </View>
         </View>
         <Text style={[styles.cardValue, { color }]}>{value}</Text>
@@ -170,19 +171,19 @@ export default function HomeScreen({ navigation }) {
       activeOpacity={0.8}
     >
       <View style={[styles.quickActionIcon, { backgroundColor: color }]}>
-        <Text style={styles.quickActionIconText}>{icon}</Text>
+        <MaterialIcons name={icon} size={20} color="white" />
       </View>
       <View style={styles.quickActionContent}>
         <Text style={styles.quickActionTitle}>{title}</Text>
         <Text style={styles.quickActionSubtitle}>{subtitle}</Text>
       </View>
-      <Text style={styles.quickActionArrow}>›</Text>
+      <MaterialIcons name="chevron-right" size={24} color="#88a2b6" />
     </TouchableOpacity>
   );
  
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#244662" />
+      <StatusBar barStyle="light-content" backgroundColor="#17384a" />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -209,9 +210,9 @@ export default function HomeScreen({ navigation }) {
               title="Total Income"
               value={`$${summary.totalIncome.toFixed(2)}`}
               subtitle="This month"
-              icon="💰"
-              color="#2E7D32"
-              gradient="#f8fff8"
+              icon="account-balance-wallet"
+              color="#4CAF50"
+              gradient="#0f2a3a"
               onPress={() => navigation.navigate('IncomeTracker')}
             />
            
@@ -219,29 +220,29 @@ export default function HomeScreen({ navigation }) {
               title="Savings Goals"
               value={`${Math.round(summary.goalProgress)}%`}
               subtitle="Overall progress"
-              icon="🎯"
-              color="#1565C0"
-              gradient="#f8fbff"
+              icon="trending-up"
+              color="#3B82F6"
+              gradient="#0f2a3a"
               onPress={() => navigation.navigate('SavingsGoals')}
             />
- 
+
             <DashboardCard
               title="Financial Literacy"
               value={summary.lessonsCompleted.toString()}
               subtitle="Lessons completed"
-              icon="📚"
-              color="#6A1B9A"
-              gradient="#fdf8ff"
+              icon="school"
+              color="#9C27B0"
+              gradient="#0f2a3a"
               onPress={() => navigation.navigate('LiteracyHub')}
             />
- 
+
             <DashboardCard
               title="Community"
               value={summary.communityThreads.toString()}
               subtitle="Active discussions"
-              icon="💬"
-              color="#E65100"
-              gradient="#fff8f0"
+              icon="forum"
+              color="#FF9800"
+              gradient="#0f2a3a"
               onPress={() => navigation.navigate('SupportCommunity')}
             />
           </View>
@@ -253,32 +254,32 @@ export default function HomeScreen({ navigation }) {
             <QuickActionButton
               title="Track New Income"
               subtitle="Record your latest earnings"
-              icon="➕"
-              color="#2E7D32"
+              icon="add"
+              color="#4CAF50"
               onPress={() => navigation.navigate('IncomeTracker')}
             />
            
             <QuickActionButton
               title="Set New Savings Goal"
               subtitle="Create a new financial target"
-              icon="🎯"
-              color="#1565C0"
+              icon="savings"
+              color="#3B82F6"
               onPress={() => navigation.navigate('SavingsGoals')}
             />
            
             <QuickActionButton
               title="Start New Lesson"
               subtitle="Learn about personal finance"
-              icon="📖"
-              color="#6A1B9A"
+              icon="menu-book"
+              color="#9C27B0"
               onPress={() => navigation.navigate('LiteracyHub')}
             />
- 
+
             <QuickActionButton
               title="Ask Community Question"
               subtitle="Get help from others"
-              icon="💭"
-              color="#E65100"
+              icon="question-answer"
+              color="#FF9800"
               onPress={() => navigation.navigate('SupportCommunity')}
             />
           </View>
@@ -293,7 +294,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   scrollView: {
     flex: 1,
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 32,
-    backgroundColor: '#244662',
+    backgroundColor: '#17384a',
   },
   headerContent: {
     flexDirection: 'row',
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#25577A',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -356,7 +357,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 300,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0f2a3a',
     shadowColor: '#000',
     shadowOffset: { width: -4, height: 0 },
     shadowOpacity: 0.3,
@@ -367,15 +368,15 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: '#E3F2FD',
+    borderBottomColor: '#2a5f7b',
     alignItems: 'center',
-    backgroundColor: '#F5F9FF',
+    backgroundColor: '#17384a',
   },
   profileAvatar: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#3F51B5',
+    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -393,12 +394,12 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1A237E',
+    color: '#ffffff',
     marginBottom: 6,
   },
   profileEmail: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#cfe0ee',
   },
   sidebarMenu: {
     padding: 20,
@@ -408,27 +409,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: '#F8FAFF',
+    backgroundColor: '#1f4a62',
   },
   menuItemText: {
     fontSize: 16,
-    color: '#1A237E',
+    color: '#cfe0ee',
     fontWeight: '600',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#2a5f7b',
     marginVertical: 20,
   },
   logoutMenuItem: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#d32f2f20',
   },
   logoutMenuItemText: {
     fontSize: 16,
-    color: '#D32F2F',
+    color: '#f44336',
     fontWeight: '600',
   },
   dashboardSection: {
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#FFFF',
     fontWeight: '600',
     flex: 1,
   },
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     fontSize: 12,
-    color: '#78909C',
+    color: '#cfe0ee',
     fontWeight: '500',
   },
   quickActionsSection: {
@@ -501,16 +502,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quickActionButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#0f2a3a',
+    borderRadius: 12,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   quickActionIcon: {
     width: 48,
@@ -529,12 +530,12 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A237E',
+    color: '#ffffff',
     marginBottom: 4,
   },
   quickActionSubtitle: {
     fontSize: 14,
-    color: '#546E7A',
+    color: '#cfe0ee',
     fontWeight: '500',
   },
   quickActionArrow: {
