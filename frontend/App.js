@@ -23,7 +23,21 @@ export default function App() {
     <I18nextProvider i18n={i18n}>
       <AuthProvider>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login">
+          <Stack.Navigator 
+            initialRouteName="Login"
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: '#17384a',
+                shadowColor: 'transparent', // Remove shadow on iOS
+                elevation: 0, // Remove shadow on Android
+              },
+              headerTintColor: '#ffffff',
+              headerTitleStyle: {
+                fontWeight: 'bold',
+              },
+              headerTitle: '', // Remove title from all screens
+            }}
+          >
             <Stack.Screen 
               name="Login" 
               component={LoginScreen}
@@ -48,10 +62,26 @@ export default function App() {
                 headerLeft: null
               }}
             />
-            <Stack.Screen name="IncomeTracker" component={IncomeTrackerScreen} />
-            <Stack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
-            <Stack.Screen name="LiteracyHub" component={LiteracyHubScreen} />
-            <Stack.Screen name="SupportCommunity" component={SupportCommunityScreen} />
+            <Stack.Screen 
+              name="IncomeTracker" 
+              component={IncomeTrackerScreen}
+              options={{ headerTitle: '' }}
+            />
+            <Stack.Screen 
+              name="SavingsGoals" 
+              component={SavingsGoalsScreen}
+              options={{ headerTitle: '' }}
+            />
+            <Stack.Screen 
+              name="LiteracyHub" 
+              component={LiteracyHubScreen}
+              options={{ headerTitle: '' }}
+            />
+            <Stack.Screen 
+              name="SupportCommunity" 
+              component={SupportCommunityScreen}
+              options={{ headerTitle: '' }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>

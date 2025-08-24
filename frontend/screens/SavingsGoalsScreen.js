@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     padding: 16,
+    paddingTop: 8, // Reduced top padding for closer spacing to nav bar
   },
   header: {
     marginBottom: 20,

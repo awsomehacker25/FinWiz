@@ -858,6 +858,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
     margin: 16,
+    marginTop: 8, // Reduced top margin for closer spacing to nav bar
   },
   statsContainer: {
     flexDirection: 'row',

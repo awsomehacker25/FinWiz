@@ -532,6 +532,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop: 8, // Reduced top padding for closer spacing to nav bar
     backgroundColor: '#17384a',
   },
   title: {
