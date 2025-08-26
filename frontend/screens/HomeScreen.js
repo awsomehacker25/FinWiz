@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Ani
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import api, { getLiteracyProgress } from '../services/api';
+import AIChatModal from '../components/AIChatModal';
  
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
@@ -13,6 +14,7 @@ export default function HomeScreen({ navigation }) {
     communityThreads: 0
   });
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [aiChatVisible, setAiChatVisible] = useState(false);
  
   useEffect(() => {
     loadSummaryData();
@@ -287,6 +289,21 @@ export default function HomeScreen({ navigation }) {
  
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* AI Chat Floating Button */}
+      <TouchableOpacity
+        style={styles.aiChatButton}
+        onPress={() => setAiChatVisible(true)}
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="smart-toy" size={24} color="#ffffff" />
+      </TouchableOpacity>
+
+      {/* AI Chat Modal */}
+      <AIChatModal
+        visible={aiChatVisible}
+        onClose={() => setAiChatVisible(false)}
+      />
     </View>
   );
 }
@@ -545,5 +562,21 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  aiChatButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });

@@ -62,4 +62,24 @@ export async function deleteReply({ threadId, replyId, userId }) {
   } catch (err) {
     throw new Error(err.response?.data?.error || 'Failed to delete reply');
   }
+}
+
+// Get all income entries for a user
+export async function getIncomeEntries(userId) {
+  try {
+    const response = await api.get('/income', { params: { userId } });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to fetch income entries');
+  }
+}
+
+// Get all savings goals for a user
+export async function getSavingsGoals(userId) {
+  try {
+    const response = await api.get('/goals', { params: { userId } });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to fetch savings goals');
+  }
 } 
