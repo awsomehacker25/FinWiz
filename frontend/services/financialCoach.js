@@ -1,21 +1,29 @@
 import axios from 'axios';
-import api, { getIncomeEntries, getSavingsGoals, getLiteracyProgress, getUserProfileByEmail } from './api';
+import api, { getIncomeEntries, getSavingsGoals, getLiteracyProgress, getUserProfileByEmail, getSpendingEntries } from './api';
 import { AI_CONFIG } from '../config/aiConfig';
 
 // Function to gather user behavior data from backend
 export async function gatherUserBehaviorData(userId, userEmail) {
   try {
-    const [incomeData, goalsData, literacyData, profileData] = await Promise.all([
+    const [incomeData, goalsData, literacyData, profileData, spendingData] = await Promise.all([
       getIncomeEntries(userId).catch(() => []),
       getSavingsGoals(userId).catch(() => []),
       getLiteracyProgress(userId).catch(() => ({ lessons: {} })),
-      getUserProfileByEmail(userEmail).catch(() => null)
+      getUserProfileByEmail(userEmail).catch(() => null),
+      getSpendingEntries(userId).catch(() => [])
     ]);
 
     // Transform data to match the expected schema
     const userBehavior = {
       userId: userId,
-      recent_transactions: [], // We don't have transaction data in the current backend
+      recent_transactions: spendingData.map(spending => ({
+        id: spending.id,
+        userId: spending.userId,
+        amount: -Math.abs(spending.amount),
+        category: spending.category || 'Other',
+        description: spending.description || 'No description',
+        date: spending.date
+      })),
       recent_income: incomeData.map(income => ({
         id: income.id,
         userId: income.userId,

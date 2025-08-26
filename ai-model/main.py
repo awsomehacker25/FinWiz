@@ -25,9 +25,12 @@ app = FastAPI(title="Financial Advisor API")
 
 # --- Models ---
 class Transaction(BaseModel):
-    date: date
+    id: str
+    userId: str
     amount: float
-    category: Optional[str]
+    category: str
+    description: Optional[str]
+    date: str
 
 class IncomeItem(BaseModel):
     id: str
@@ -239,7 +242,7 @@ def financial_coach(user: UserBehavior, question: str = Body(..., embed=True)):
     total_spent = -sum(t.amount for t in user.recent_transactions if t.amount < 0)
     if user.recent_transactions:
         spending_details = "; ".join(
-            f"${-t.amount:.2f} on {t.category}" for t in user.recent_transactions if t.amount < 0
+            f"${-t.amount:.2f} on {t.category} ({t.description})" for t in user.recent_transactions if t.amount < 0
         )
         spending_context = f"Recently, they spent a total of ${total_spent:.2f}, including: {spending_details}."
     else:

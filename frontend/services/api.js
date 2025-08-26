@@ -82,4 +82,14 @@ export async function getSavingsGoals(userId) {
   } catch (error) {
     throw new Error(error.response?.data?.error || 'Failed to fetch savings goals');
   }
+}
+
+// Get all spending entries for a user
+export async function getSpendingEntries(userId) {
+  try {
+    const response = await api.get('/spending', { params: { userId } });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Failed to fetch spending entries');
+  }
 } 
