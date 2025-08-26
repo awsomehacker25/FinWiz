@@ -12,6 +12,7 @@ import SignUpScreen from './screens/SignUpScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import IncomeTrackerScreen from './screens/IncomeTrackerScreen';
 import SavingsGoalsScreen from './screens/SavingsGoalsScreen';
+import SpendingTrackerScreen from './screens/SpendingTrackerScreen';
 import LiteracyHubScreen from './screens/LiteracyHubScreen';
 import SupportCommunityScreen from './screens/SupportCommunityScreen';
 
@@ -70,6 +71,11 @@ export default function App() {
             <Stack.Screen 
               name="SavingsGoals" 
               component={SavingsGoalsScreen}
+              options={{ headerTitle: '' }}
+            />
+            <Stack.Screen 
+              name="SpendingTracker" 
+              component={SpendingTrackerScreen}
               options={{ headerTitle: '' }}
             />
             <Stack.Screen 

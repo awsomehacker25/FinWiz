@@ -9,6 +9,7 @@ export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
   const [summary, setSummary] = useState({
     totalIncome: 0,
+    totalSpending: 0,
     goalProgress: 0,
     lessonsCompleted: 0,
     communityThreads: 0
@@ -27,8 +28,9 @@ export default function HomeScreen({ navigation }) {
   const loadSummaryData = async () => {
     if (user) {
       try {
-        const [incomeRes, goalsRes, literacyProgress, communityRes] = await Promise.all([
+        const [incomeRes, spendingRes, goalsRes, literacyProgress, communityRes] = await Promise.all([
           api.get(`/income?userId=${user.id}`),
+          api.get(`/spending?userId=${user.id}`),
           api.get(`/goals?userId=${user.id}`),
           getLiteracyProgress(user.email || user.id),
           api.get('/community')
@@ -37,6 +39,12 @@ export default function HomeScreen({ navigation }) {
         // Handle income calculation with null checks
         const incomeData = Array.isArray(incomeRes?.data) ? incomeRes.data : [];
         const totalIncome = incomeData.reduce((sum, entry) => 
+          sum + (Number(entry?.amount) || 0), 0
+        );
+
+        // Handle spending calculation with null checks
+        const spendingData = Array.isArray(spendingRes?.data) ? spendingRes.data : [];
+        const totalSpending = spendingData.reduce((sum, entry) => 
           sum + (Number(entry?.amount) || 0), 0
         );
 
@@ -58,6 +66,7 @@ export default function HomeScreen({ navigation }) {
 
         setSummary({
           totalIncome: totalIncome,
+          totalSpending: totalSpending,
           goalProgress: Math.min(goalProgress * 100, 100), // Cap at 100%
           lessonsCompleted,
           communityThreads: Array.isArray(communityRes?.data) ? communityRes.data.length : 0
@@ -217,6 +226,16 @@ export default function HomeScreen({ navigation }) {
               gradient="#0f2a3a"
               onPress={() => navigation.navigate('IncomeTracker')}
             />
+
+            <DashboardCard
+              title="Total Spending"
+              value={`$${summary.totalSpending.toFixed(2)}`}
+              subtitle="This month"
+              icon="shopping-cart"
+              color="#ff6b6b"
+              gradient="#0f2a3a"
+              onPress={() => navigation.navigate('SpendingTracker')}
+            />
            
             <DashboardCard
               title="Savings Goals"
@@ -259,6 +278,14 @@ export default function HomeScreen({ navigation }) {
               icon="add"
               color="#4CAF50"
               onPress={() => navigation.navigate('IncomeTracker')}
+            />
+
+            <QuickActionButton
+              title="Add New Expense"
+              subtitle="Record your spending"
+              icon="receipt"
+              color="#ff6b6b"
+              onPress={() => navigation.navigate('SpendingTracker')}
             />
            
             <QuickActionButton
