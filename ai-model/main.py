@@ -301,24 +301,59 @@ class BillEntryResponse(BaseModel):
     description: str
     category: str
 
+import json
+import re
+from fastapi import HTTPException
+
+def safe_parse_json(text: str):
+    """Try to extract JSON object from text and parse it safely."""
+    try:
+        # Attempt direct parse first
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Try to extract {...} from text
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+    return None
+
 @app.post("/generate-bill-entry", response_model=BillEntryResponse)
 def generate_bill_entry(bill: BillData):
-    """Generate a concise title, description, and category for a spending tracker entry."""
-    prompt = f"""Based on this bill information, generate a concise title and description for a spending tracker entry:
+    """Generate an elegant, generalized description for a spending tracker entry."""
+    prompt = f"""Based on this bill information, generate a concise title and description for a spending tracker entry.
 
+Guidelines:
+- Do NOT list specific items from the receipt.
+- Write an elegant, natural description in one or two smooth sentences.
+- Avoid excessive commas; focus on readability and flow.
+- Include merchant name, city, type of purchase, and total.
+- Suggest a suitable category (e.g., Food, Shopping, Gas, Entertainment, Utilities, Healthcare, Transportation).
+
+Bill Information:
 Merchant: {bill.merchantName}
 Amount: ${bill.total:.2f}
-Context: {", ".join(bill.context)}
+Context: {', '.join(bill.context)}
 
-Respond in JSON format only:
+Respond ONLY in JSON format:
 {{
   "title": "Brief descriptive title (max 30 characters)",
-  "description": "Detailed description of the purchase",
-  "category": "Suggested category (e.g., Food, Shopping, Gas, Entertainment, Utilities, Healthcare, Transportation)"
+  "description": "A polished, natural description of the purchase",
+  "category": "Suggested category"
 }}"""
 
     response = call_llm(prompt, max_tokens=150)
 
-    # return raw model output – assuming it’s valid JSON in your use case
-    import json
-    return BillEntryResponse(**json.loads(response))
+    parsed = safe_parse_json(response)
+    if not parsed:
+        print("AI JSON parse failed. Raw response:\n", response)
+        raise HTTPException(status_code=500, detail="Failed to parse AI response.")
+
+    # Ensure all keys exist
+    for key in ["title", "description", "category"]:
+        if key not in parsed:
+            parsed[key] = "Unknown"
+
+    return BillEntryResponse(**parsed)

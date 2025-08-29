@@ -6,43 +6,114 @@ import axios from 'axios';
  * Service for handling bill scanning and OCR operations
  */
 export class BillScanService {
+
+  /**
+   * Convert image URI to blob for Azure API
+   */
+  static async convertImageToBlob(imageUri) {
+    try {
+      if (imageUri.startsWith('data:')) {
+        // Handle base64 data URI
+        const response = await fetch(imageUri);
+        return await response.blob();
+      } else if (imageUri.startsWith('file://') || imageUri.startsWith('content://')) {
+        // Handle local file URI (React Native)
+        const response = await fetch(imageUri);
+        return await response.blob();
+      } else {
+        // Handle regular URL
+        const response = await fetch(imageUri);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+        return await response.blob();
+      }
+    } catch (error) {
+      console.error('Image conversion error:', error);
+      throw new Error('Failed to convert image for processing');
+    }
+  }
   
   /**
-   * Extract text from image using OCR.space API
+   * Extract text from image using Azure Custom Vision OCR API
    */
   static async extractTextFromImage(imageUri) {
     try {
-      const formData = new FormData();
-      formData.append('file', {
-        uri: imageUri,
-        type: 'image/jpeg',
-        name: 'bill.jpg',
-      });
-      formData.append('apikey', OCR_CONFIG.API_KEY);
-      formData.append('language', OCR_CONFIG.LANGUAGE);
-      formData.append('isOverlayRequired', OCR_CONFIG.IS_OVERLAY_REQUIRED.toString());
-      formData.append('detectOrientation', OCR_CONFIG.DETECT_ORIENTATION.toString());
-      formData.append('scale', OCR_CONFIG.SCALE.toString());
-      formData.append('OCREngine', OCR_CONFIG.OCR_ENGINE.toString());
+      // Step 1: Convert image to blob
+      const imageBlob = await BillScanService.convertImageToBlob(imageUri);
 
-      const response = await fetch(OCR_CONFIG.ENDPOINT, {
+      // Step 2: Submit image for analysis
+      const submitResponse = await fetch(OCR_CONFIG.ENDPOINT, {
         method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Ocp-Apim-Subscription-Key': OCR_CONFIG.API_KEY,
+          'Content-Type': 'application/octet-stream',
         },
-        body: formData,
+        body: imageBlob,
       });
 
-      const result = await response.json();
+      if (!submitResponse.ok) {
+        throw new Error(`Azure OCR submission failed: ${submitResponse.status} ${submitResponse.statusText}`);
+      }
+
+      // Get the operation location from the response headers
+      const operationLocation = submitResponse.headers.get('Operation-Location');
+      if (!operationLocation) {
+        throw new Error('Operation-Location header not found in Azure response');
+      }
+
+      // Step 3: Poll for results
+      let result = null;
+      let attempts = 0;
       
-      if (result.ParsedResults && result.ParsedResults.length > 0) {
-        return result.ParsedResults[0].ParsedText;
-      } else {
+      while (attempts < OCR_CONFIG.MAX_POLLING_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, OCR_CONFIG.POLLING_INTERVAL));
+        
+        const resultResponse = await fetch(operationLocation, {
+          method: 'GET',
+          headers: {
+            'Ocp-Apim-Subscription-Key': OCR_CONFIG.API_KEY,
+          },
+        });
+
+        if (!resultResponse.ok) {
+          throw new Error(`Azure OCR result fetch failed: ${resultResponse.status} ${resultResponse.statusText}`);
+        }
+
+        result = await resultResponse.json();
+        
+        if (result.status === 'succeeded') {
+          break;
+        } else if (result.status === 'failed') {
+          throw new Error('Azure OCR processing failed');
+        }
+        
+        attempts++;
+      }
+
+      if (!result || result.status !== 'succeeded') {
+        throw new Error('Azure OCR processing timed out or failed');
+      }
+
+      // Step 4: Extract text from the result
+      let extractedText = '';
+      if (result.analyzeResult && result.analyzeResult.readResults) {
+        for (const page of result.analyzeResult.readResults) {
+          for (const line of page.lines) {
+            extractedText += line.text + '\n';
+          }
+        }
+      }
+
+      if (!extractedText.trim()) {
         throw new Error('No text found in image');
       }
+
+      return extractedText.trim();
+      
     } catch (error) {
-      console.error('OCR Error:', error);
-      throw new Error('Failed to extract text from image');
+      console.error('Azure OCR Error:', error);
+      throw new Error(`Failed to extract text from image: ${error.message}`);
     }
   }
 
