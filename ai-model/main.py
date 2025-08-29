@@ -320,6 +320,87 @@ def safe_parse_json(text: str):
                 pass
     return None
 
+class MerchantExtractionRequest(BaseModel):
+    raw_text: str
+    context_lines: List[str]
+
+class MerchantExtractionResponse(BaseModel):
+    merchant_name: str
+    confidence: float
+    reasoning: str
+
+@app.post("/extract-merchant", response_model=MerchantExtractionResponse)
+def extract_merchant_name(request: MerchantExtractionRequest):
+    """Use AI to intelligently extract and clean merchant names from OCR text."""
+    
+    # Create context summary from the first 10 lines
+    context_summary = '\n'.join(request.context_lines[:10])
+    
+    prompt = f"""You are an expert at identifying merchant names from receipt text. Analyze the following OCR text and extract the most likely merchant name.
+
+Guidelines for merchant name identification:
+1. The merchant name is typically at the top of the receipt (first 1-3 lines)
+2. Ignore: addresses, phone numbers, dates, receipt numbers, website URLs
+3. Ignore: generic words like "RECEIPT", "INVOICE", "THANK YOU", "CUSTOMER COPY"
+4. Look for: business names, store names, restaurant names, brand names
+5. Clean up: remove special characters, extra spaces, but keep essential punctuation like & or apostrophes
+6. Prefer: the most prominent business name, not subsidiary information
+7. If multiple business names appear, choose the primary one (usually the largest/most prominent)
+
+OCR Text (first 10 lines):
+{context_summary}
+
+Full OCR Text for context:
+{request.raw_text[:500]}...
+
+Analyze this text and identify the merchant name. Consider common receipt patterns and business naming conventions.
+
+Respond ONLY in JSON format:
+{{
+  "merchant_name": "The cleaned, properly formatted merchant name",
+  "confidence": 0.95,
+  "reasoning": "Brief explanation of why this was chosen as the merchant name"
+}}
+
+Confidence should be:
+- 0.9-1.0: Very confident (clear business name found)
+- 0.7-0.9: Confident (likely business name with minor uncertainty)
+- 0.5-0.7: Moderate (best guess from available text)
+- 0.0-0.5: Low confidence (unclear or no clear merchant name)"""
+
+    response = call_llm(prompt, max_tokens=200)
+    
+    parsed = safe_parse_json(response)
+    if not parsed:
+        print("AI JSON parse failed for merchant extraction. Raw response:\n", response)
+        # Fallback response
+        return MerchantExtractionResponse(
+            merchant_name="Unknown Merchant",
+            confidence=0.0,
+            reasoning="Failed to parse AI response"
+        )
+    
+    # Ensure all required fields exist with defaults
+    merchant_name = parsed.get("merchant_name", "Unknown Merchant")
+    confidence = parsed.get("confidence", 0.0)
+    reasoning = parsed.get("reasoning", "No reasoning provided")
+    
+    # Validate confidence is a float between 0 and 1
+    try:
+        confidence = float(confidence)
+        if confidence < 0:
+            confidence = 0.0
+        elif confidence > 1:
+            confidence = 1.0
+    except (ValueError, TypeError):
+        confidence = 0.0
+    
+    return MerchantExtractionResponse(
+        merchant_name=merchant_name,
+        confidence=confidence,
+        reasoning=reasoning
+    )
+
 @app.post("/generate-bill-entry", response_model=BillEntryResponse)
 def generate_bill_entry(bill: BillData):
     """Generate an elegant, generalized description for a spending tracker entry."""

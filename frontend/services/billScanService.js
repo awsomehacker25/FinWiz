@@ -118,30 +118,202 @@ export class BillScanService {
   }
 
   /**
-   * Extract bill data from OCR text
+   * Intelligent total detection with contextual analysis
    */
-  static extractBillData(ocrText) {
+  static findBestTotal(ocrText, lines, highPriorityPatterns, mediumPriorityPatterns, lowPriorityPatterns, fallbackPattern) {
+    const candidateTotals = [];
+
+    // Find all potential totals with their context and priority
+    const addCandidate = (amount, priority, source, lineContext = '') => {
+      if (amount && amount > 0) {
+        candidateTotals.push({
+          amount: parseFloat(amount),
+          priority,
+          source,
+          lineContext
+        });
+      }
+    };
+
+    // Process each line to find amounts with context
+    lines.forEach((line, index) => {
+      const lineText = line.toLowerCase();
+      
+      // High priority patterns
+      highPriorityPatterns.forEach((pattern, patternIndex) => {
+        const matches = line.match(pattern);
+        if (matches) {
+          addCandidate(matches[1], 1, `high_priority_${patternIndex}`, lineText);
+        }
+      });
+
+      // Medium priority patterns - but avoid if subtotal appears in same context
+      if (!lineText.includes('subtotal') && !lineText.includes('sub total')) {
+        mediumPriorityPatterns.forEach((pattern, patternIndex) => {
+          const matches = line.match(pattern);
+          if (matches) {
+            addCandidate(matches[1], 2, `medium_priority_${patternIndex}`, lineText);
+          }
+        });
+      }
+
+      // Low priority patterns (subtotal) - only if no tax or tip follows
+      lowPriorityPatterns.forEach((pattern, patternIndex) => {
+        const matches = line.match(pattern);
+        if (matches) {
+          // Check if there are subsequent lines with tax, tip, or total
+          const hasSubsequentTotal = lines.slice(index + 1, index + 5).some(laterLine => 
+            laterLine.toLowerCase().match(/(?:^|[^a-z])(?:total|tax|tip|gratuity|service|charge)/i)
+          );
+          
+          const priority = hasSubsequentTotal ? 4 : 3; // Lower priority if there's likely a total later
+          addCandidate(matches[1], priority, `low_priority_${patternIndex}`, lineText);
+        }
+      });
+    });
+
+    // If we have candidates, return the best one
+    if (candidateTotals.length > 0) {
+      // Sort by priority (lower number = higher priority), then by amount (higher = likely total)
+      candidateTotals.sort((a, b) => {
+        if (a.priority !== b.priority) {
+          return a.priority - b.priority;
+        }
+        return b.amount - a.amount;
+      });
+
+      const bestCandidate = candidateTotals[0];
+      console.log(`Found total using contextual analysis: $${bestCandidate.amount} (${bestCandidate.source})`);
+      console.log(`Context: "${bestCandidate.lineContext}"`);
+      
+      // Log other candidates for debugging
+      if (candidateTotals.length > 1) {
+        console.log('Other candidates found:', candidateTotals.slice(1).map(c => `$${c.amount} (${c.source})`));
+      }
+      
+      return bestCandidate.amount;
+    }
+
+    // Last resort: find the largest dollar amount, but prefer amounts near the end of the receipt
+    const allAmounts = Array.from(ocrText.matchAll(fallbackPattern))
+      .map((match, index) => ({
+        amount: parseFloat(match[1]),
+        position: match.index,
+        isNearEnd: match.index > (ocrText.length * 0.6) // Prefer amounts in last 40% of text
+      }))
+      .filter(item => !isNaN(item.amount) && item.amount > 0)
+      .sort((a, b) => {
+        // Prefer amounts near the end, then by size
+        if (a.isNearEnd !== b.isNearEnd) {
+          return a.isNearEnd ? -1 : 1;
+        }
+        return b.amount - a.amount;
+      });
+
+    if (allAmounts.length > 0) {
+      console.log(`Found total using fallback pattern: $${allAmounts[0].amount} (position: ${allAmounts[0].isNearEnd ? 'near end' : 'earlier'})`);
+      return allAmounts[0].amount;
+    }
+
+    return null;
+  }
+
+  /**
+   * Use AI to intelligently extract merchant name from OCR text
+   */
+  static async extractMerchantWithAI(ocrText, contextLines) {
+    try {
+      console.log('Calling AI merchant extraction...');
+      
+      const requestPayload = {
+        raw_text: ocrText,
+        context_lines: contextLines
+      };
+
+      const response = await axios.post(
+        `${AI_CONFIG.FASTAPI_ENDPOINT}/extract-merchant`,
+        requestPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: AI_CONFIG.TIMEOUT,
+        }
+      );
+
+      const result = response.data;
+      console.log('AI merchant extraction result:', result);
+      
+      return {
+        merchantName: result.merchant_name || 'Unknown Merchant',
+        confidence: result.confidence || 0.0,
+        reasoning: result.reasoning || 'No reasoning provided'
+      };
+
+    } catch (error) {
+      console.error('AI merchant extraction failed:', error);
+      return {
+        merchantName: 'Unknown Merchant',
+        confidence: 0.0,
+        reasoning: 'AI extraction failed'
+      };
+    }
+  }
+
+  /**
+   * Extract bill data from OCR text with improved total detection and AI-enhanced merchant extraction
+   */
+  static async extractBillData(ocrText) {
     const lines = ocrText.split('\n').filter(line => line.trim());
     let total = null;
     let merchantName = '';
+    let aiMerchantResult = null;
     const context = [];
 
-    // Look for total amount patterns
-    const totalPatterns = [
-      /total[:\s]*\$?(\d+\.\d{2})/i,
-      /amount[:\s]*\$?(\d+\.\d{2})/i,
-      /subtotal[:\s]*\$?(\d+\.\d{2})/i,
-      /grand\s*total[:\s]*\$?(\d+\.\d{2})/i,
-      /balance[:\s]*\$?(\d+\.\d{2})/i,
-      /total[:\s]*\$?(\d+\.?\d*)/i,
-      /amount[:\s]*\$?(\d+\.?\d*)/i,
-      /subtotal[:\s]*\$?(\d+\.?\d*)/i,
-      /grand\s*total[:\s]*\$?(\d+\.?\d*)/i,
-      /balance[:\s]*\$?(\d+\.?\d*)/i,
-      /\$(\d+\.\d{2})/g
+    // Prioritized total amount patterns - ordered by preference
+    const highPriorityPatterns = [
+      /(?:grand\s*)?total[:\s]*\$?(\d+\.\d{2})/i,
+      /amount\s*(?:due|owed)[:\s]*\$?(\d+\.\d{2})/i,
+      /final\s*total[:\s]*\$?(\d+\.\d{2})/i,
+      /total\s*amount[:\s]*\$?(\d+\.\d{2})/i,
+      /balance\s*due[:\s]*\$?(\d+\.\d{2})/i,
+      /(?:grand\s*)?total[:\s]*\$?(\d+\.?\d*)/i,
+      /amount\s*(?:due|owed)[:\s]*\$?(\d+\.?\d*)/i,
+      /final\s*total[:\s]*\$?(\d+\.?\d*)/i,
+      /total\s*amount[:\s]*\$?(\d+\.?\d*)/i,
+      /balance\s*due[:\s]*\$?(\d+\.?\d*)/i
     ];
 
-    // Look for merchant name (usually at the top)
+    const mediumPriorityPatterns = [
+      /(?<!sub)total[:\s]*\$?(\d+\.\d{2})/i,
+      /amount[:\s]*\$?(\d+\.\d{2})/i,
+      /balance[:\s]*\$?(\d+\.\d{2})/i,
+      /(?<!sub)total[:\s]*\$?(\d+\.?\d*)/i,
+      /amount[:\s]*\$?(\d+\.?\d*)/i,
+      /balance[:\s]*\$?(\d+\.?\d*)/i
+    ];
+
+    const lowPriorityPatterns = [
+      /subtotal[:\s]*\$?(\d+\.\d{2})/i,
+      /sub\s*total[:\s]*\$?(\d+\.\d{2})/i,
+      /subtotal[:\s]*\$?(\d+\.?\d*)/i,
+      /sub\s*total[:\s]*\$?(\d+\.?\d*)/i
+    ];
+
+    // Fallback pattern for any dollar amount
+    const fallbackPattern = /\$(\d+\.\d{2})/g;
+
+    // Collect context for AI
+    lines.forEach(line => {
+      const cleanLine = line.trim();
+      if (cleanLine.length > 2 && 
+          !cleanLine.match(/^\d+$/) && 
+          !cleanLine.match(/^[\d\s\-\(\)]+$/)) { // Skip phone numbers and purely numeric lines
+        context.push(cleanLine);
+      }
+    });
+
+    // Rule-based merchant name extraction (fallback)
     if (lines.length > 0) {
       // Try to find the best merchant name from the first few lines
       for (let i = 0; i < Math.min(3, lines.length); i++) {
@@ -161,42 +333,31 @@ export class BillScanService {
       merchantName = merchantName.replace(/[^a-zA-Z0-9\s&]/g, '').trim();
     }
 
-    // Find total amount
-    for (const pattern of totalPatterns) {
-      if (pattern.global) {
-        // For dollar amount pattern, get the largest amount
-        const matches = Array.from(ocrText.matchAll(pattern))
-          .map(match => parseFloat(match[1]))
-          .filter(amount => !isNaN(amount) && amount > 0)
-          .sort((a, b) => b - a);
-        if (matches.length > 0) {
-          total = matches[0];
-          break;
-        }
+    // Try AI-enhanced merchant extraction
+    try {
+      aiMerchantResult = await BillScanService.extractMerchantWithAI(ocrText, context);
+      console.log('AI merchant extraction result:', aiMerchantResult);
+      
+      // Use AI result if confidence is high enough, otherwise use rule-based fallback
+      if (aiMerchantResult && aiMerchantResult.confidence >= 0.5) {
+        merchantName = aiMerchantResult.merchantName;
+        console.log(`Using AI merchant name: ${merchantName} (confidence: ${aiMerchantResult.confidence})`);
       } else {
-        const matches = ocrText.match(pattern);
-        if (matches) {
-          total = parseFloat(matches[1]);
-          if (total && total > 0) break;
-        }
+        console.log(`Using rule-based merchant name: ${merchantName} (AI confidence too low: ${aiMerchantResult?.confidence || 0})`);
       }
+    } catch (error) {
+      console.error('AI merchant extraction failed, using rule-based approach:', error);
     }
 
-    // Collect context for AI
-    lines.forEach(line => {
-      const cleanLine = line.trim();
-      if (cleanLine.length > 2 && 
-          !cleanLine.match(/^\d+$/) && 
-          !cleanLine.match(/^[\d\s\-\(\)]+$/)) { // Skip phone numbers and purely numeric lines
-        context.push(cleanLine);
-      }
-    });
+    // Enhanced total detection using contextual analysis
+    total = BillScanService.findBestTotal(ocrText, lines, highPriorityPatterns, mediumPriorityPatterns, lowPriorityPatterns, fallbackPattern);
 
     return {
       total: total,
       merchantName: merchantName || 'Unknown Merchant',
       context: context.slice(0, 10), // Limit context to first 10 relevant lines
-      rawText: ocrText
+      rawText: ocrText,
+      aiMerchantInfo: aiMerchantResult // Include AI analysis for debugging
     };
   }
 
@@ -309,8 +470,8 @@ export class BillScanService {
       const ocrText = await BillScanService.extractTextFromImage(imageUri);
       console.log('OCR extraction completed, text length:', ocrText.length);
 
-      // Step 2: Extract structured data from OCR text
-      const billData = BillScanService.extractBillData(ocrText);
+      // Step 2: Extract structured data from OCR text (now includes AI merchant extraction)
+      const billData = await BillScanService.extractBillData(ocrText);
       console.log('Bill data extracted:', billData);
 
       if (!billData.total || billData.total <= 0) {
@@ -340,7 +501,9 @@ export class BillScanService {
           category: aiData.category,
           description: aiData.description,
           merchantName: billData.merchantName,
-          rawOcrText: billData.rawText
+          rawOcrText: billData.rawText,
+          // Include AI analysis info for debugging/transparency
+          aiMerchantInfo: billData.aiMerchantInfo
         },
         message: `Successfully processed bill from ${billData.merchantName} for $${billData.total}`
       };
