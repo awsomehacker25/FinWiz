@@ -290,3 +290,35 @@ def financial_coach(user: UserBehavior, question: str = Body(..., embed=True)):
 
     advice = call_llm(prompt, max_tokens=200)
     return AdviceResponse(advice=advice)
+
+class BillData(BaseModel):
+    context: List[str]
+    merchantName: str
+    total: float
+
+class BillEntryResponse(BaseModel):
+    title: str
+    description: str
+    category: str
+
+@app.post("/generate-bill-entry", response_model=BillEntryResponse)
+def generate_bill_entry(bill: BillData):
+    """Generate a concise title, description, and category for a spending tracker entry."""
+    prompt = f"""Based on this bill information, generate a concise title and description for a spending tracker entry:
+
+Merchant: {bill.merchantName}
+Amount: ${bill.total:.2f}
+Context: {", ".join(bill.context)}
+
+Respond in JSON format only:
+{{
+  "title": "Brief descriptive title (max 30 characters)",
+  "description": "Detailed description of the purchase",
+  "category": "Suggested category (e.g., Food, Shopping, Gas, Entertainment, Utilities, Healthcare, Transportation)"
+}}"""
+
+    response = call_llm(prompt, max_tokens=150)
+
+    # return raw model output – assuming it’s valid JSON in your use case
+    import json
+    return BillEntryResponse(**json.loads(response))

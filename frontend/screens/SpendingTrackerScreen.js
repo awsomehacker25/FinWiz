@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera } from 'expo-camera';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { OCR_CONFIG } from '../config/ocrConfig';
+import BillScanService from '../services/billScanService';
 
 export default function SpendingTrackerScreen() {
   const [amount, setAmount] = useState('');
@@ -10,6 +14,8 @@ export default function SpendingTrackerScreen() {
   const [description, setDescription] = useState('');
   const [entries, setEntries] = useState([]);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [showScanOptions, setShowScanOptions] = useState(false);
   const { user } = useContext(AuthContext);
 
   const processEntryData = (entry) => ({
@@ -178,6 +184,107 @@ export default function SpendingTrackerScreen() {
     return 'payment';
   };
 
+  // OCR and Bill Scanning Functions
+  const requestCameraPermissions = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera permission is required to scan bills');
+      return false;
+    }
+    return true;
+  };
+
+  const requestImagePermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Photo library permission is required to select images');
+      return false;
+    }
+    return true;
+  };
+
+  const processBillImage = async (imageUri) => {
+    setIsScanning(true);
+    try {
+      // Use the comprehensive bill processing method
+      const result = await BillScanService.processBillImage(imageUri, user.id);
+      
+      if (result.success) {
+        console.log("Successful result");
+        // Auto-fill the form with processed data
+        setAmount(result.data.amount.toString());
+        setCategory(result.data.category);
+        setDescription(result.data.description);
+        
+        Alert.alert(
+          'Bill Scanned Successfully!',
+          result.message + '\n\nThe form has been auto-filled. Please review and submit.'
+        );
+      } else {
+        // Handle processing failure
+        Alert.alert(
+          'Scan Error', 
+          result.error + '\n\nPlease enter the details manually.'
+        );
+      }
+    } catch (error) {
+      console.error('Bill processing error:', error);
+      Alert.alert(
+        'Scan Error', 
+        'Failed to process the bill image. Please try again or enter manually.'
+      );
+    } finally {
+      setIsScanning(false);
+      setShowScanOptions(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    const hasPermission = await requestCameraPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: OCR_CONFIG.IMAGE_QUALITY,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processBillImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Camera Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const pickFromGallery = async () => {
+    const hasPermission = await requestImagePermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: OCR_CONFIG.IMAGE_QUALITY,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processBillImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      Alert.alert('Gallery Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  const showScanOptionsModal = () => {
+    setShowScanOptions(true);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -261,13 +368,29 @@ export default function SpendingTrackerScreen() {
                   </TouchableOpacity>
                 </>
               ) : (
-                <TouchableOpacity
-                  style={[styles.button, styles.addButton]}
-                  onPress={addEntry}
-                >
-                  <MaterialIcons name="add" size={20} color="white" style={{ marginRight: 8 }} />
-                  <Text style={styles.buttonText}>Add Expense</Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={[styles.button, styles.scanButton]}
+                    onPress={showScanOptionsModal}
+                    disabled={isScanning}
+                  >
+                    {isScanning ? (
+                      <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                    ) : (
+                      <MaterialIcons name="camera-alt" size={20} color="white" style={{ marginRight: 8 }} />
+                    )}
+                    <Text style={styles.buttonText}>
+                      {isScanning ? 'Scanning...' : 'Scan Bill'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.addButton]}
+                    onPress={addEntry}
+                  >
+                    <MaterialIcons name="add" size={20} color="white" style={{ marginRight: 8 }} />
+                    <Text style={styles.buttonText}>Add Expense</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           </View>
@@ -337,6 +460,49 @@ export default function SpendingTrackerScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Scan Options Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showScanOptions}
+        onRequestClose={() => setShowScanOptions(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Scan Bill</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowScanOptions(false)}
+              >
+                <MaterialIcons name="close" size={24} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Choose how you'd like to scan your bill
+            </Text>
+            <View style={styles.scanOptionsContainer}>
+              <TouchableOpacity
+                style={styles.scanOption}
+                onPress={takePhoto}
+              >
+                <MaterialIcons name="camera-alt" size={32} color="#ff6b6b" />
+                <Text style={styles.scanOptionTitle}>Take Photo</Text>
+                <Text style={styles.scanOptionSubtitle}>Use camera to capture bill</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.scanOption}
+                onPress={pickFromGallery}
+              >
+                <MaterialIcons name="photo-library" size={32} color="#ff6b6b" />
+                <Text style={styles.scanOptionTitle}>Choose from Gallery</Text>
+                <Text style={styles.scanOptionSubtitle}>Select existing photo</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -479,6 +645,9 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: '#ff6b6b',
   },
+  scanButton: {
+    backgroundColor: '#3B82F6',
+  },
   updateButton: {
     backgroundColor: '#ff6b6b',
   },
@@ -613,5 +782,64 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#ffffff',
     lineHeight: 22,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#0f2a3a',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    minHeight: 300,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#cfe0ee',
+    marginBottom: 24,
+  },
+  scanOptionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 16,
+  },
+  scanOption: {
+    flex: 1,
+    backgroundColor: '#1f4a62',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2a5f7b',
+  },
+  scanOptionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 12,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  scanOptionSubtitle: {
+    fontSize: 14,
+    color: '#cfe0ee',
+    textAlign: 'center',
   },
 });
