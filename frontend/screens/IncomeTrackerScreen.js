@@ -3,6 +3,7 @@ import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, S
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import SpeechTextInput from '../components/SpeechTextInput';
 
 export default function IncomeTrackerScreen() {
   const [amount, setAmount] = useState('');
@@ -166,8 +167,8 @@ export default function IncomeTrackerScreen() {
           <View style={styles.inputContainer}>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Amount</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="Enter amount"
                 value={amount}
                 onChangeText={setAmount}
@@ -177,8 +178,8 @@ export default function IncomeTrackerScreen() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Source</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="e.g., Uber, Cash, Salary"
                 value={source}
                 onChangeText={setSource}

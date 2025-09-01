@@ -3,6 +3,7 @@ import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, S
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import SpeechTextInput from '../components/SpeechTextInput';
  
 function ProgressBar({ progress }) {
   return (
@@ -199,8 +200,8 @@ export default function SavingsGoalsScreen() {
           <View style={styles.inputContainer}>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Goal Name</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="e.g., Emergency Fund, Vacation"
                 value={goalName}
                 onChangeText={setGoalName}
@@ -209,8 +210,8 @@ export default function SavingsGoalsScreen() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Target Amount</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="Enter target amount"
                 value={target}
                 onChangeText={setTarget}
@@ -220,8 +221,8 @@ export default function SavingsGoalsScreen() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Amount Saved (Optional)</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="Enter amount already saved"
                 value={saved}
                 onChangeText={setSaved}

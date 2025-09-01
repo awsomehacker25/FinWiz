@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { upsertUserProfile } from '../services/api';
+import SpeechTextInput from '../components/SpeechTextInput';
 
 const ProfileSetupScreen = ({ navigation }) => {
   const { user, login } = useContext(AuthContext);
@@ -136,8 +137,8 @@ const ProfileSetupScreen = ({ navigation }) => {
       <Text style={styles.stepTitle}>Basic Information</Text>
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Age *</Text>
-        <TextInput
-          style={styles.input}
+        <SpeechTextInput
+          inputStyle={styles.input}
           value={profile.age}
           onChangeText={(text) => setProfile({ ...profile, age: text })}
           placeholder="Enter your age"
@@ -148,8 +149,8 @@ const ProfileSetupScreen = ({ navigation }) => {
  
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Phone Number (Optional)</Text>
-        <TextInput
-          style={styles.input}
+        <SpeechTextInput
+          inputStyle={styles.input}
           value={profile.phoneNumber}
           onChangeText={(text) => setProfile({ ...profile, phoneNumber: text })}
           placeholder="Enter your phone number"
@@ -225,8 +226,8 @@ const ProfileSetupScreen = ({ navigation }) => {
       <Text style={styles.stepTitle}>Work & Income</Text>
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Occupation *</Text>
-        <TextInput
-          style={styles.input}
+        <SpeechTextInput
+          inputStyle={styles.input}
           placeholder="Enter your occupation"
           value={profile.occupation}
           onChangeText={(text) => setProfile(prev => ({ ...prev, occupation: text }))}
@@ -236,8 +237,8 @@ const ProfileSetupScreen = ({ navigation }) => {
  
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Monthly Income *</Text>
-        <TextInput
-          style={styles.input}
+        <SpeechTextInput
+          inputStyle={styles.input}
           placeholder="Enter your monthly income"
           value={profile.monthlyIncome}
           onChangeText={(text) => setProfile(prev => ({ ...prev, monthlyIncome: text }))}

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { upsertUserProfile } from '../services/api';
+import SpeechTextInput from '../components/SpeechTextInput';
 
 export default function SignUpScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -97,8 +98,8 @@ export default function SignUpScreen({ navigation }) {
           <View style={styles.nameRow}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
               <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="Enter first name"
                 value={formData.firstName}
                 onChangeText={(text) => setFormData({...formData, firstName: text})}
@@ -109,8 +110,8 @@ export default function SignUpScreen({ navigation }) {
  
             <View style={[styles.inputContainer, styles.halfWidth]}>
               <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="Enter last name"
                 value={formData.lastName}
                 onChangeText={(text) => setFormData({...formData, lastName: text})}
@@ -122,8 +123,8 @@ export default function SignUpScreen({ navigation }) {
  
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
+            <SpeechTextInput
+              inputStyle={styles.input}
               placeholder="Enter your email"
               value={formData.email}
               onChangeText={(text) => setFormData({...formData, email: text})}
@@ -136,8 +137,8 @@ export default function SignUpScreen({ navigation }) {
  
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
+            <SpeechTextInput
+              inputStyle={styles.input}
               placeholder="Create a password"
               value={formData.password}
               onChangeText={(text) => setFormData({...formData, password: text})}
@@ -148,8 +149,8 @@ export default function SignUpScreen({ navigation }) {
  
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={styles.input}
+            <SpeechTextInput
+              inputStyle={styles.input}
               placeholder="Confirm your password"
               value={formData.confirmPassword}
               onChangeText={(text) => setFormData({...formData, confirmPassword: text})}

@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { OCR_CONFIG } from '../config/ocrConfig';
 import BillScanService from '../services/billScanService';
+import SpeechTextInput from '../components/SpeechTextInput';
 
 export default function SpendingTrackerScreen() {
   const [amount, setAmount] = useState('');
@@ -319,9 +320,9 @@ export default function SpendingTrackerScreen() {
             <View style={styles.inputRow}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.inputLabel}>Amount</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0.00"
+                <SpeechTextInput
+                  inputStyle={styles.input}
+                  placeholder="Enter amount"
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="numeric"
@@ -330,8 +331,8 @@ export default function SpendingTrackerScreen() {
               </View>
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
                 <Text style={styles.inputLabel}>Category</Text>
-                <TextInput
-                  style={styles.input}
+                <SpeechTextInput
+                  inputStyle={styles.input}
                   placeholder="e.g., Food, Gas, Shopping"
                   value={category}
                   onChangeText={setCategory}
@@ -341,8 +342,8 @@ export default function SpendingTrackerScreen() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Description (Optional)</Text>
-              <TextInput
-                style={styles.input}
+              <SpeechTextInput
+                inputStyle={styles.input}
                 placeholder="What did you buy?"
                 value={description}
                 onChangeText={setDescription}

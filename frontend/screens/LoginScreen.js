@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { getUserProfileByEmail } from '../services/api';
+import SpeechTextInput from '../components/SpeechTextInput';
 
 export default function LoginScreen({ navigation }) {
   const { login, user, loading: authLoading } = useContext(AuthContext);
@@ -98,8 +99,8 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
+            <SpeechTextInput
+              inputStyle={styles.input}
               placeholder="Enter your email"
               value={email}
               onChangeText={setEmail}
@@ -112,8 +113,8 @@ export default function LoginScreen({ navigation }) {
  
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
+            <SpeechTextInput
+              inputStyle={styles.input}
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
