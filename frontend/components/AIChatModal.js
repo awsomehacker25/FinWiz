@@ -17,9 +17,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { gatherUserBehaviorData, askFinancialCoach } from '../services/financialCoach';
 import { AI_CONFIG } from '../config/aiConfig';
+import { useTranslation } from 'react-i18next';
 
 const AIChatModal = ({ visible, onClose }) => {
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
@@ -42,7 +44,7 @@ const AIChatModal = ({ visible, onClose }) => {
     setChatHistory(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    try {
+  try {
       // Gather user behavior data
       const userBehaviorData = await gatherUserBehaviorData(
         user.id || user.email, 
@@ -78,7 +80,7 @@ const AIChatModal = ({ visible, onClose }) => {
       const errorMessage = {
         id: Date.now() + 1,
         type: 'error',
-        content: error.message || 'Sorry, I encountered an error. Please try again.',
+        content: error.message || (t('ai_error_fallback') || 'Sorry, I encountered an error. Please try again.'),
         timestamp: new Date()
       };
       
@@ -90,12 +92,12 @@ const AIChatModal = ({ visible, onClose }) => {
 
   const clearChat = () => {
     Alert.alert(
-      'Clear Chat',
-      'Are you sure you want to clear the chat history?',
+      t('clear_chat') || 'Clear Chat',
+      t('clear_chat_confirm') || 'Are you sure you want to clear the chat history?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel') || 'Cancel', style: 'cancel' },
         { 
-          text: 'Clear', 
+          text: t('clear') || 'Clear', 
           style: 'destructive',
           onPress: () => setChatHistory([])
         }
@@ -153,14 +155,14 @@ const AIChatModal = ({ visible, onClose }) => {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <View style={styles.aiAvatar}>
-                  <MaterialIcons name="smart-toy" size={24} color="#ffffff" />
+                  <View style={styles.aiAvatar}>
+                    <MaterialIcons name="smart-toy" size={24} color="#ffffff" />
+                  </View>
+                  <View>
+                    <Text style={styles.headerTitle}>{t('ai_coach_title') || 'AI Financial Coach'}</Text>
+                    <Text style={styles.headerSubtitle}>{t('ai_coach_subtitle') || 'Get personalized financial advice'}</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.headerTitle}>AI Financial Coach</Text>
-                  <Text style={styles.headerSubtitle}>Get personalized financial advice</Text>
-                </View>
-              </View>
               <View style={styles.headerRight}>
                 {chatHistory.length > 0 && (
                   <TouchableOpacity
@@ -190,10 +192,10 @@ const AIChatModal = ({ visible, onClose }) => {
                 <View style={styles.welcomeContainer}>
                   <MaterialIcons name="chat" size={48} color="#88a2b6" />
                   <Text style={styles.welcomeText}>
-                    Ask me anything about your finances!
+                    {t('ai_welcome_title') || 'Ask me anything about your finances!'}
                   </Text>
                   <Text style={styles.welcomeSubtext}>
-                    I can help with budgeting, savings goals, spending habits, and more.
+                    {t('ai_welcome_subtext') || 'I can help with budgeting, savings goals, spending habits, and more.'}
                   </Text>
                 </View>
               ) : (
@@ -203,7 +205,7 @@ const AIChatModal = ({ visible, onClose }) => {
               {isLoading && (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#3B82F6" />
-                  <Text style={styles.loadingText}>Thinking...</Text>
+                  <Text style={styles.loadingText}>{t('ai_thinking') || 'Thinking...'}</Text>
                 </View>
               )}
             </ScrollView>
@@ -214,7 +216,7 @@ const AIChatModal = ({ visible, onClose }) => {
                 style={styles.textInput}
                 value={question}
                 onChangeText={setQuestion}
-                placeholder="Ask about your finances..."
+                placeholder={t('ai_placeholder') || 'Ask about your finances...'}
                 placeholderTextColor="#88a2b6"
                 multiline
                 maxLength={AI_CONFIG.MAX_MESSAGE_LENGTH}

@@ -4,6 +4,8 @@ import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import api, { getLiteracyProgress } from '../services/api';
 import AIChatModal from '../components/AIChatModal';
+import { useTranslation } from 'react-i18next';
+import i18n, { setAppLanguage, getAppLanguage } from '../localization/i18n';
  
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
@@ -16,6 +18,14 @@ export default function HomeScreen({ navigation }) {
   });
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [aiChatVisible, setAiChatVisible] = useState(false);
+  const { t } = useTranslation();
+  const [language, setLanguage] = useState(i18n.language || 'en');
+
+  useEffect(() => {
+    if (language && i18n.language !== language) {
+      i18n.changeLanguage(language).catch(() => {});
+    }
+  }, [language]);
  
   useEffect(() => {
     loadSummaryData();
@@ -24,6 +34,16 @@ export default function HomeScreen({ navigation }) {
     });
     return unsubscribe;
   }, [user, navigation]);
+
+  useEffect(() => {
+    // load persisted language
+    (async () => {
+      const saved = await getAppLanguage();
+      if (saved && saved !== language) {
+        setLanguage(saved);
+      }
+    })();
+  }, []);
 
   const loadSummaryData = async () => {
     if (user) {
@@ -81,15 +101,15 @@ export default function HomeScreen({ navigation }) {
   const handleLogout = () => {
     setProfileModalVisible(false);
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('logout'),
+      t('logout_confirm'),
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('logout'),
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -123,32 +143,32 @@ export default function HomeScreen({ navigation }) {
               </Text>
             </View>
             <Text style={styles.profileName}>
-              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}
+              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : t('user')}
             </Text>
             <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
           </View>
  
           <View style={styles.sidebarMenu}>
             <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Profile Settings</Text>
+              <Text style={styles.menuItemText}>{t('profile_settings')}</Text>
             </TouchableOpacity>
            
             <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Account Security</Text>
+              <Text style={styles.menuItemText}>{t('account_security')}</Text>
             </TouchableOpacity>
            
             <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Help & Support</Text>
+              <Text style={styles.menuItemText}>{t('help_support')}</Text>
             </TouchableOpacity>
            
             <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>About</Text>
+              <Text style={styles.menuItemText}>{t('about')}</Text>
             </TouchableOpacity>
            
             <View style={styles.menuDivider} />
            
             <TouchableOpacity style={styles.logoutMenuItem} onPress={handleLogout}>
-              <Text style={styles.logoutMenuItemText}>Logout</Text>
+              <Text style={styles.logoutMenuItemText}>{t('logout')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -199,28 +219,38 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeText}>Welcome back,</Text>
-              <Text style={styles.nameText}>{user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}</Text>
+              <Text style={styles.welcomeText}>{t('welcome_back')}</Text>
+              <Text style={styles.nameText}>{user?.firstName ? `${user.firstName} ${user.lastName || ''}` : t('user')}</Text>
             </View>
-            <TouchableOpacity style={styles.profileButton} onPress={() => setProfileModalVisible(true)}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity style={styles.langButton} onPress={async () => {
+                const newLang = language === 'en' ? 'es' : 'en';
+                setLanguage(newLang);
+                await setAppLanguage(newLang);
+              }}>
+                <Text style={styles.langButtonText}>{language === 'en' ? 'EN' : 'ES'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.profileButton} onPress={() => setProfileModalVisible(true)}>
               <View style={styles.profileIcon}>
                 <Text style={styles.profileIconText}>
                   {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
                 </Text>
               </View>
             </TouchableOpacity>
+            </View>
           </View>
         </View>
  
         <ProfileSidebar />
  
         <View style={styles.dashboardSection}>
-          <Text style={styles.sectionTitle}>Financial Overview</Text>
+          <Text style={styles.sectionTitle}>{t('financial_overview')}</Text>
           <View style={styles.grid}>
             <DashboardCard
-              title="Total Income"
+              title={t('total_income')}
               value={`$${summary.totalIncome.toFixed(2)}`}
-              subtitle="This month"
+              subtitle={t('this_month')}
               icon="account-balance-wallet"
               color="#4CAF50"
               gradient="#0f2a3a"
@@ -228,9 +258,9 @@ export default function HomeScreen({ navigation }) {
             />
 
             <DashboardCard
-              title="Total Spending"
+              title={t('total_spending')}
               value={`$${summary.totalSpending.toFixed(2)}`}
-              subtitle="This month"
+              subtitle={t('this_month')}
               icon="shopping-cart"
               color="#ff6b6b"
               gradient="#0f2a3a"
@@ -238,9 +268,9 @@ export default function HomeScreen({ navigation }) {
             />
            
             <DashboardCard
-              title="Savings Goals"
+              title={t('savings_goals')}
               value={`${Math.round(summary.goalProgress)}%`}
-              subtitle="Overall progress"
+              subtitle={t('overall_progress')}
               icon="trending-up"
               color="#3B82F6"
               gradient="#0f2a3a"
@@ -248,9 +278,9 @@ export default function HomeScreen({ navigation }) {
             />
 
             <DashboardCard
-              title="Financial Literacy"
+              title={t('financial_literacy')}
               value={summary.lessonsCompleted.toString()}
-              subtitle="Lessons completed"
+              subtitle={t('lessons_completed')}
               icon="school"
               color="#9C27B0"
               gradient="#0f2a3a"
@@ -258,9 +288,9 @@ export default function HomeScreen({ navigation }) {
             />
 
             <DashboardCard
-              title="Community"
+              title={t('community')}
               value={summary.communityThreads.toString()}
-              subtitle="Active discussions"
+              subtitle={t('active_discussions')}
               icon="forum"
               color="#FF9800"
               gradient="#0f2a3a"
@@ -270,43 +300,43 @@ export default function HomeScreen({ navigation }) {
         </View>
  
         <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('quick_actions')}</Text>
           <View style={styles.quickActionsContainer}>
             <QuickActionButton
-              title="Track New Income"
-              subtitle="Record your latest earnings"
+              title={t('track_new_income')}
+              subtitle={t('record_latest_earnings')}
               icon="add"
               color="#4CAF50"
               onPress={() => navigation.navigate('IncomeTracker')}
             />
 
             <QuickActionButton
-              title="Add New Expense"
-              subtitle="Record your spending"
+              title={t('add_new_expense')}
+              subtitle={t('record_your_spending')}
               icon="receipt"
               color="#ff6b6b"
               onPress={() => navigation.navigate('SpendingTracker')}
             />
            
             <QuickActionButton
-              title="Set New Savings Goal"
-              subtitle="Create a new financial target"
+              title={t('set_new_savings_goal')}
+              subtitle={t('create_new_financial_target')}
               icon="savings"
               color="#3B82F6"
               onPress={() => navigation.navigate('SavingsGoals')}
             />
            
             <QuickActionButton
-              title="Start New Lesson"
-              subtitle="Learn about personal finance"
+              title={t('start_new_lesson')}
+              subtitle={t('learn_about_personal_finance')}
               icon="menu-book"
               color="#9C27B0"
               onPress={() => navigation.navigate('LiteracyHub')}
             />
 
             <QuickActionButton
-              title="Ask Community Question"
-              subtitle="Get help from others"
+              title={t('ask_community_question')}
+              subtitle={t('get_help_from_others')}
               icon="question-answer"
               color="#FF9800"
               onPress={() => navigation.navigate('SupportCommunity')}
@@ -605,5 +635,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  langButton: {
+    marginRight: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a5f7b',
+    backgroundColor: '#0f2a3a',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  langButtonText: {
+    color: '#cfe0ee',
+    fontWeight: '700'
   },
 });
