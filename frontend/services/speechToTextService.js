@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { AZURE_SPEECH_API_KEY, AZURE_SPEECH_REGION } from '@env';
 
 class SpeechToTextService {
