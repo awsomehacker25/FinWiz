@@ -250,7 +250,7 @@ export default function HomeScreen({ navigation }) {
             <DashboardCard
               title={t('total_income')}
               value={`$${summary.totalIncome.toFixed(2)}`}
-              subtitle={t('this_month')}
+              subtitle={t('view_income_details')}
               icon="account-balance-wallet"
               color="#4CAF50"
               gradient="#0f2a3a"
@@ -260,7 +260,7 @@ export default function HomeScreen({ navigation }) {
             <DashboardCard
               title={t('total_spending')}
               value={`$${summary.totalSpending.toFixed(2)}`}
-              subtitle={t('this_month')}
+              subtitle={t('view_spending_details')}
               icon="shopping-cart"
               color="#ff6b6b"
               gradient="#0f2a3a"
@@ -340,6 +340,14 @@ export default function HomeScreen({ navigation }) {
               icon="question-answer"
               color="#FF9800"
               onPress={() => navigation.navigate('SupportCommunity')}
+            />
+
+            <QuickActionButton
+              title="View Dashboard"
+              subtitle="Analyze your financial data"
+              icon="analytics"
+              color="#607D8B"
+              onPress={() => navigation.navigate('DataDashboard')}
             />
           </View>
         </View>

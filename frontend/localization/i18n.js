@@ -18,8 +18,9 @@ const resources = {
 
       financial_overview: "Financial Overview",
       total_income: "Total Income",
-      this_month: "This month",
+      view_income_details: "View income details",
       total_spending: "Total Spending",
+      view_spending_details: "View spending details",
       savings_goals: "Savings Goals",
       overall_progress: "Overall progress",
       financial_literacy: "Financial Literacy",
@@ -66,8 +67,9 @@ const resources = {
 
       financial_overview: "Resumen financiero",
       total_income: "Ingresos totales",
-      this_month: "Este mes",
+      view_income_details: "Ver Detalles de Ingresos",
       total_spending: "Gastos totales",
+      view_spending_details: "Ver Detalles de Gastos",
       savings_goals: "Metas de ahorro",
       overall_progress: "Progreso general",
       financial_literacy: "Educación financiera",

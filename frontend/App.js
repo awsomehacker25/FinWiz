@@ -15,6 +15,7 @@ import SavingsGoalsScreen from './screens/SavingsGoalsScreen';
 import SpendingTrackerScreen from './screens/SpendingTrackerScreen';
 import LiteracyHubScreen from './screens/LiteracyHubScreen';
 import SupportCommunityScreen from './screens/SupportCommunityScreen';
+import DataDashboardScreen from './screens/DataDashboardScreen';
 
 
 const Stack = createStackNavigator();
@@ -87,6 +88,11 @@ export default function App() {
               name="SupportCommunity" 
               component={SupportCommunityScreen}
               options={{ headerTitle: '' }}
+            />
+            <Stack.Screen 
+              name="DataDashboard" 
+              component={DataDashboardScreen}
+              options={{ headerTitle: 'Financial Dashboard' }}
             />
           </Stack.Navigator>
         </NavigationContainer>
