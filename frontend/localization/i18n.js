@@ -38,7 +38,11 @@ const resources = {
       start_new_lesson: "Start New Lesson",
       learn_about_personal_finance: "Learn about personal finance",
       ask_community_question: "Ask Community Question",
-      get_help_from_others: "Get help from others"
+      get_help_from_others: "Get help from others",
+      view_dashboard: "View Dashboard",
+      analyze_financial_data: "Analyze your financial data",
+      find_financial_institutions: "Find Financial Institutions",
+      locate_nearby_banks: "Locate nearby banks and services"
       ,
       // AI Chat / Financial Coach
       ai_coach_title: "AI Financial Coach",
@@ -87,7 +91,11 @@ const resources = {
       start_new_lesson: "Comenzar nueva lección",
       learn_about_personal_finance: "Aprende sobre finanzas personales",
       ask_community_question: "Hacer una pregunta a la comunidad",
-      get_help_from_others: "Obtén ayuda de otros"
+      get_help_from_others: "Obtén ayuda de otros",
+      view_dashboard: "Ver Panel de Control",
+      analyze_financial_data: "Analiza tus datos financieros",
+      find_financial_institutions: "Encontrar Instituciones Financieras",
+      locate_nearby_banks: "Localiza bancos y servicios cercanos"
       ,
       // AI Chat / Financial Coach
       ai_coach_title: "Entrenador Financiero AI",

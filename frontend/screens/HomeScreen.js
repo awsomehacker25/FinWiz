@@ -343,11 +343,19 @@ export default function HomeScreen({ navigation }) {
             />
 
             <QuickActionButton
-              title="View Dashboard"
-              subtitle="Analyze your financial data"
+              title={t('view_dashboard')}
+              subtitle={t('analyze_financial_data')}
               icon="analytics"
               color="#607D8B"
               onPress={() => navigation.navigate('DataDashboard')}
+            />
+
+            <QuickActionButton
+              title={t('find_financial_institutions')}
+              subtitle={t('locate_nearby_banks')}
+              icon="location-on"
+              color="#00BCD4"
+              onPress={() => navigation.navigate('FinancialInstitutions')}
             />
           </View>
         </View>

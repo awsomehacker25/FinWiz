@@ -16,6 +16,7 @@ import SpendingTrackerScreen from './screens/SpendingTrackerScreen';
 import LiteracyHubScreen from './screens/LiteracyHubScreen';
 import SupportCommunityScreen from './screens/SupportCommunityScreen';
 import DataDashboardScreen from './screens/DataDashboardScreen';
+import FinancialInstitutionsScreen from './screens/FinancialInstitutionsScreen';
 
 
 const Stack = createStackNavigator();
@@ -93,6 +94,11 @@ export default function App() {
               name="DataDashboard" 
               component={DataDashboardScreen}
               options={{ headerTitle: 'Financial Dashboard' }}
+            />
+            <Stack.Screen 
+              name="FinancialInstitutions" 
+              component={FinancialInstitutionsScreen}
+              options={{ headerTitle: 'Financial Institutions' }}
             />
           </Stack.Navigator>
         </NavigationContainer>
