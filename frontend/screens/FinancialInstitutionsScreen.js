@@ -158,18 +158,6 @@ export default function FinancialInstitutionsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Financial Institutions</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
       {/* Map View */}
       {location && (
         <View style={styles.mapContainer}>
@@ -335,8 +323,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   mapContainer: {
-    height: 300,
-    marginHorizontal: 24,
+    height: 400,
+    marginHorizontal: 16,
+    marginTop: 16,
     marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',
@@ -356,8 +345,8 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     backgroundColor: '#0f2a3a',
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderRadius: 12,
     padding: 16,
   },
