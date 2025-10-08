@@ -133,7 +133,7 @@ export default function LoginScreen({ navigation }) {
             disabled={loading}
           >
             <Text style={styles.loginButtonText}>
-              {loading ? 'Logging in...' : t('login')}
+              {loading ? 'Logging in...' : "Login"}
             </Text>
           </TouchableOpacity>
  
