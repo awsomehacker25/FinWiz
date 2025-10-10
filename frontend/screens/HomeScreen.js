@@ -195,6 +195,14 @@ export default function HomeScreen({ navigation }) {
           color="#FF9800"
           onPress={() => navigation.navigate('SupportCommunity')}
         />
+
+        <DashboardCard
+          title="AI Advisor"
+          value="🤖"
+          subtitle="Get personalized advice"
+          color="#E91E63"
+          onPress={() => navigation.navigate('AIChat')}
+        />
       </View>
 
       <View style={styles.quickActions}>
@@ -225,6 +233,13 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate('SupportCommunity')}
         >
           <Text style={styles.actionButtonText}>Ask Community Question</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.aiActionButton]}
+          onPress={() => navigation.navigate('AIChat')}
+        >
+          <Text style={styles.actionButtonText}>🤖 Chat with AI Advisor</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -408,5 +423,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2c3e50',
     fontWeight: '500',
+  },
+  aiActionButton: {
+    backgroundColor: '#E91E63',
   },
 });

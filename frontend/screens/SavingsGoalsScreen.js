@@ -20,6 +20,9 @@ export default function SavingsGoalsScreen() {
   const [saved, setSaved] = useState('');
   const [goals, setGoals] = useState([]);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [aiSuggestions, setAiSuggestions] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const { user } = useContext(AuthContext);
 
   const processGoalData = (goal) => ({
@@ -38,7 +41,7 @@ export default function SavingsGoalsScreen() {
   const loadGoals = async () => {
     if (user) {
       try {
-        const res = await api.get(`/goals?userId=${user.id}`);
+        const res = await api.get(`/goals?userId=${user.id}&includeSuggestions=true`);
         const data = Array.isArray(res?.data) ? res.data : [];
         const processedGoals = data
           .map(processGoalData)
@@ -48,6 +51,31 @@ export default function SavingsGoalsScreen() {
         console.error(err);
         setGoals([]);
       }
+    }
+  };
+
+  const getAISuggestions = async () => {
+    if (!user) return;
+    
+    setLoadingSuggestions(true);
+    try {
+      const res = await api.post('/aiSuggestions', {
+        userId: user.id,
+        query: 'What are the best strategies for achieving my savings goals?',
+        context: {
+          goals: goals.map(goal => goal.goalName)
+        }
+      });
+      
+      if (res.data && res.data.advice) {
+        setAiSuggestions(res.data.advice);
+        setShowSuggestions(true);
+      }
+    } catch (err) {
+      console.error('Error getting AI suggestions:', err);
+      Alert.alert('Error', 'Failed to get AI suggestions');
+    } finally {
+      setLoadingSuggestions(false);
     }
   };
 
@@ -151,7 +179,18 @@ export default function SavingsGoalsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Savings Goals</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Savings Goals</Text>
+        <TouchableOpacity
+          style={[styles.aiButton, loadingSuggestions && styles.aiButtonDisabled]}
+          onPress={getAISuggestions}
+          disabled={loadingSuggestions}
+        >
+          <Text style={styles.aiButtonText}>
+            {loadingSuggestions ? 'Getting AI Advice...' : '🤖 Get AI Advice'}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.card}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -239,6 +278,26 @@ export default function SavingsGoalsScreen() {
           </View>
         )}
       />
+
+      {/* AI Suggestions Modal */}
+      {showSuggestions && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>🤖 AI Financial Advice</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowSuggestions(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.suggestionsContent}>
+              <Text style={styles.suggestionsText}>{aiSuggestions}</Text>
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -249,11 +308,32 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f5f5f5',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: '#2c3e50',
+    flex: 1,
+  },
+  aiButton: {
+    backgroundColor: '#9C27B0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginLeft: 12,
+  },
+  aiButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  aiButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: 'white',
@@ -383,5 +463,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     minWidth: 40,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    maxHeight: '80%',
+    width: '90%',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  suggestionsContent: {
+    maxHeight: 400,
+  },
+  suggestionsText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#2c3e50',
   },
 });

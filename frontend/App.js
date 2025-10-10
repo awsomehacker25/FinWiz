@@ -14,6 +14,7 @@ import IncomeTrackerScreen from './screens/IncomeTrackerScreen';
 import SavingsGoalsScreen from './screens/SavingsGoalsScreen';
 import LiteracyHubScreen from './screens/LiteracyHubScreen';
 import SupportCommunityScreen from './screens/SupportCommunityScreen';
+import AIChatScreen from './screens/AIChatScreen';
 
 
 const Stack = createStackNavigator();
@@ -52,6 +53,16 @@ export default function App() {
             <Stack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
             <Stack.Screen name="LiteracyHub" component={LiteracyHubScreen} />
             <Stack.Screen name="SupportCommunity" component={SupportCommunityScreen} />
+            <Stack.Screen 
+              name="AIChat" 
+              component={AIChatScreen}
+              options={{ 
+                title: 'AI Financial Advisor',
+                headerStyle: { backgroundColor: '#9C27B0' },
+                headerTintColor: 'white',
+                headerTitleStyle: { fontWeight: 'bold' }
+              }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
