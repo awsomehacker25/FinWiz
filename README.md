@@ -1,4 +1,4 @@
-# Finance-AI
+# FinWiz
 
 A Wealth Management App for immigrants and gig workers, built with React Native (Expo) and Azure backend (Functions, Cosmos DB, Notification Hubs).
 
