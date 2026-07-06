@@ -1,13 +1,15 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
-import { upsertUserProfile } from '../services/api';
+import { upsertUserProfile, getUserProfileByEmail } from '../services/api';
 import SpeechTextInput from '../components/SpeechTextInput';
 
-const ProfileSetupScreen = ({ navigation }) => {
+const ProfileSetupScreen = ({ navigation, route }) => {
   const { user, login } = useContext(AuthContext);
+  const isEditing = !!route?.params?.editing;
+  const [loadingProfile, setLoadingProfile] = useState(isEditing);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState({
     phoneNumber: '',
@@ -21,12 +23,34 @@ const ProfileSetupScreen = ({ navigation }) => {
     experience: 'beginner'
   });
 
-  // Pre-fill name if user data is available from sign-up
+  // When opened from Profile Settings (not first-time onboarding), load the
+  // existing profile so the user is editing their real data, not blank defaults.
   useEffect(() => {
-    if (user && user.firstName && user.lastName) {
-      // Name is already collected in sign-up, no need to pre-fill here
-    }
-  }, [user]);
+    if (!isEditing || !user?.email) return;
+    (async () => {
+      try {
+        const existing = await getUserProfileByEmail(user.email);
+        if (existing) {
+          setProfile(prev => ({
+            ...prev,
+            phoneNumber: existing.phoneNumber ?? prev.phoneNumber,
+            age: existing.age ?? prev.age,
+            occupation: existing.occupation ?? prev.occupation,
+            visaStatus: existing.visaStatus ?? prev.visaStatus,
+            preferredLanguage: existing.preferredLanguage ?? prev.preferredLanguage,
+            educationLevel: existing.educationLevel ?? prev.educationLevel,
+            monthlyIncome: existing.monthlyIncome ?? prev.monthlyIncome,
+            financialGoals: existing.financialGoals ?? prev.financialGoals,
+            experience: existing.experience ?? prev.experience,
+          }));
+        }
+      } catch (e) {
+        // Fall back to blank defaults if the fetch fails.
+      } finally {
+        setLoadingProfile(false);
+      }
+    })();
+  }, [isEditing, user?.email]);
 
   const financialGoalOptions = [
     'Save for Emergency Fund',
@@ -124,7 +148,13 @@ const ProfileSetupScreen = ({ navigation }) => {
       });
       // Update user context to mark profile as complete
       await login({ ...user, isNewUser: false });
-      navigation.replace('Home');
+      if (isEditing) {
+        // Return to wherever Profile Settings was opened from, rather than
+        // replacing it with a second Home screen on the stack.
+        navigation.goBack();
+      } else {
+        navigation.replace('Home');
+      }
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to save profile');
     }
@@ -297,10 +327,23 @@ const ProfileSetupScreen = ({ navigation }) => {
     </>
   );
  
+  if (loadingProfile) {
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content}>
-        <Text style={styles.title}>Complete Your Profile</Text>
+        {isEditing && (
+          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="close" size={24} color="#ffffff" />
+          </TouchableOpacity>
+        )}
+        <Text style={styles.title}>{isEditing ? 'Edit Your Profile' : 'Complete Your Profile'}</Text>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             {[1, 2, 3].map((s) => (
@@ -335,7 +378,7 @@ const ProfileSetupScreen = ({ navigation }) => {
           onPress={handleNext}
         >
           <Text style={styles.buttonText}>
-            {step === 3 ? 'Complete' : 'Next'}
+            {step === 3 ? (isEditing ? 'Save Changes' : 'Complete') : 'Next'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -347,6 +390,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#17384a',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0f2a3a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   content: {
     flex: 1,

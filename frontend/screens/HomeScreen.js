@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated, StatusBar } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
 import { getIncomeEntries, getSpendingEntries, getSavingsGoals, getLiteracyProgress, getCommunityThreads } from '../services/api';
 import AIChatModal from '../components/AIChatModal';
 import { useTranslation } from 'react-i18next';
@@ -121,6 +123,47 @@ export default function HomeScreen({ navigation }) {
     );
   };
  
+  const handleProfileSettings = () => {
+    setProfileModalVisible(false);
+    navigation.navigate('ProfileSetup', { editing: true });
+  };
+
+  const handleAccountSecurity = () => {
+    setProfileModalVisible(false);
+    if (!user?.email) return;
+    Alert.alert(
+      t('account_security'),
+      `Send a password reset link to ${user.email}?`,
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: 'Send Email',
+          onPress: async () => {
+            try {
+              await sendPasswordResetEmail(auth, user.email);
+              Alert.alert('Email Sent', 'Check your inbox for a link to reset your password.');
+            } catch (err) {
+              Alert.alert('Error', err.message || 'Failed to send password reset email.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleHelpSupport = () => {
+    setProfileModalVisible(false);
+    navigation.navigate('SupportCommunity');
+  };
+
+  const handleAbout = () => {
+    setProfileModalVisible(false);
+    Alert.alert(
+      'About FinWiz',
+      'FinWiz v1.0.0\n\nYour Smart Financial Assistant for immigrants and gig workers — track income and spending, set savings goals, build financial literacy, and connect with your community, all in one place.'
+    );
+  };
+
   const selectLanguage = async (code) => {
     // Close first — ProfileSidebar/LanguagePicker used to be redefined on
     // every render, which remounted the native Modal while it was still
@@ -202,6 +245,10 @@ export default function HomeScreen({ navigation }) {
           user={user}
           t={t}
           onLogout={handleLogout}
+          onProfileSettings={handleProfileSettings}
+          onAccountSecurity={handleAccountSecurity}
+          onHelpSupport={handleHelpSupport}
+          onAbout={handleAbout}
         />
         <LanguagePicker
           visible={languageModalVisible}
@@ -354,7 +401,7 @@ export default function HomeScreen({ navigation }) {
 // remount whenever the parent re-renders while it's still open (e.g. from
 // the state change or i18next event a selection inside it triggers), which
 // can freeze the app.
-const ProfileSidebar = ({ visible, onClose, user, t, onLogout }) => (
+const ProfileSidebar = ({ visible, onClose, user, t, onLogout, onProfileSettings, onAccountSecurity, onHelpSupport, onAbout }) => (
   <Modal
     animationType="slide"
     transparent={true}
@@ -380,25 +427,34 @@ const ProfileSidebar = ({ visible, onClose, user, t, onLogout }) => (
         </View>
 
         <View style={styles.sidebarMenu}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={onProfileSettings}>
+            <MaterialIcons name="person" size={20} color="#cfe0ee" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>{t('profile_settings')}</Text>
+            <MaterialIcons name="chevron-right" size={20} color="#546E7A" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={onAccountSecurity}>
+            <MaterialIcons name="lock" size={20} color="#cfe0ee" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>{t('account_security')}</Text>
+            <MaterialIcons name="chevron-right" size={20} color="#546E7A" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={onHelpSupport}>
+            <MaterialIcons name="forum" size={20} color="#cfe0ee" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>{t('help_support')}</Text>
+            <MaterialIcons name="chevron-right" size={20} color="#546E7A" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={onAbout}>
+            <MaterialIcons name="info" size={20} color="#cfe0ee" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>{t('about')}</Text>
+            <MaterialIcons name="chevron-right" size={20} color="#546E7A" />
           </TouchableOpacity>
 
           <View style={styles.menuDivider} />
 
           <TouchableOpacity style={styles.logoutMenuItem} onPress={onLogout}>
+            <MaterialIcons name="logout" size={20} color="#f44336" style={styles.menuItemIcon} />
             <Text style={styles.logoutMenuItemText}>{t('logout')}</Text>
           </TouchableOpacity>
         </View>
@@ -555,13 +611,19 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 12,
     marginBottom: 8,
     backgroundColor: '#1f4a62',
   },
+  menuItemIcon: {
+    marginRight: 12,
+  },
   menuItemText: {
+    flex: 1,
     fontSize: 16,
     color: '#cfe0ee',
     fontWeight: '600',
@@ -572,6 +634,8 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   logoutMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 12,
