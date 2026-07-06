@@ -5,8 +5,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getIncomeEntries, getSpendingEntries, getSavingsGoals, getLiteracyProgress, getCommunityThreads } from '../services/api';
 import AIChatModal from '../components/AIChatModal';
 import { useTranslation } from 'react-i18next';
-import i18n, { setAppLanguage, getAppLanguage } from '../localization/i18n';
- 
+import i18n, { setAppLanguage, getAppLanguage, SUPPORTED_LANGUAGES } from '../localization/i18n';
+
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useContext(AuthContext);
   const [summary, setSummary] = useState({
@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }) {
   });
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [aiChatVisible, setAiChatVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const { t } = useTranslation();
   const [language, setLanguage] = useState(i18n.language || 'en');
 
@@ -120,59 +121,19 @@ export default function HomeScreen({ navigation }) {
     );
   };
  
-  const ProfileSidebar = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={profileModalVisible}
-      onRequestClose={() => setProfileModalVisible(false)}
-    >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={() => setProfileModalVisible(false)}
-      >
-        <View style={styles.sidebar}>
-          <View style={styles.sidebarHeader}>
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileInitial}>
-                {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
-              </Text>
-            </View>
-            <Text style={styles.profileName}>
-              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : t('user')}
-            </Text>
-            <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
-          </View>
- 
-          <View style={styles.sidebarMenu}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>{t('profile_settings')}</Text>
-            </TouchableOpacity>
-           
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>{t('account_security')}</Text>
-            </TouchableOpacity>
-           
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>{t('help_support')}</Text>
-            </TouchableOpacity>
-           
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>{t('about')}</Text>
-            </TouchableOpacity>
-           
-            <View style={styles.menuDivider} />
-           
-            <TouchableOpacity style={styles.logoutMenuItem} onPress={handleLogout}>
-              <Text style={styles.logoutMenuItemText}>{t('logout')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
- 
+  const selectLanguage = async (code) => {
+    // Close first — ProfileSidebar/LanguagePicker used to be redefined on
+    // every render, which remounted the native Modal while it was still
+    // open once this state change (and the i18next languageChanged event
+    // it triggers) forced a re-render, freezing the app. They're now stable
+    // module-level components, so this is just for a snappier close.
+    setLanguageModalVisible(false);
+    setLanguage(code);
+    await setAppLanguage(code);
+  };
+
+  const currentLanguage = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
+
   const DashboardCard = ({ title, value, subtitle, icon, onPress, color, gradient }) => (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: gradient }]}
@@ -220,12 +181,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.nameText}>{user?.firstName ? `${user.firstName} ${user.lastName || ''}` : t('user')}</Text>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <TouchableOpacity style={styles.langButton} onPress={async () => {
-                const newLang = language === 'en' ? 'es' : 'en';
-                setLanguage(newLang);
-                await setAppLanguage(newLang);
-              }}>
-                <Text style={styles.langButtonText}>{language === 'en' ? 'EN' : 'ES'}</Text>
+              <TouchableOpacity style={styles.langButton} onPress={() => setLanguageModalVisible(true)}>
+                <Text style={styles.langButtonText}>{currentLanguage.code.toUpperCase()}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.profileButton} onPress={() => setProfileModalVisible(true)}>
@@ -239,7 +196,20 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
  
-        <ProfileSidebar />
+        <ProfileSidebar
+          visible={profileModalVisible}
+          onClose={() => setProfileModalVisible(false)}
+          user={user}
+          t={t}
+          onLogout={handleLogout}
+        />
+        <LanguagePicker
+          visible={languageModalVisible}
+          onClose={() => setLanguageModalVisible(false)}
+          language={language}
+          onSelect={selectLanguage}
+          t={t}
+        />
  
         <View style={styles.dashboardSection}>
           <Text style={styles.sectionTitle}>{t('financial_overview')}</Text>
@@ -377,7 +347,100 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
- 
+
+// Module-level (not redefined per HomeScreen render) so React preserves
+// their identity across re-renders — redefining a component that wraps a
+// native Modal inside another component's render body causes the Modal to
+// remount whenever the parent re-renders while it's still open (e.g. from
+// the state change or i18next event a selection inside it triggers), which
+// can freeze the app.
+const ProfileSidebar = ({ visible, onClose, user, t, onLogout }) => (
+  <Modal
+    animationType="slide"
+    transparent={true}
+    visible={visible}
+    onRequestClose={onClose}
+  >
+    <TouchableOpacity
+      style={styles.modalOverlay}
+      activeOpacity={1}
+      onPress={onClose}
+    >
+      <View style={styles.sidebar}>
+        <View style={styles.sidebarHeader}>
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileInitial}>
+              {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+            </Text>
+          </View>
+          <Text style={styles.profileName}>
+            {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : t('user')}
+          </Text>
+          <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+        </View>
+
+        <View style={styles.sidebarMenu}>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuItemText}>{t('profile_settings')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuItemText}>{t('account_security')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuItemText}>{t('help_support')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuItemText}>{t('about')}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity style={styles.logoutMenuItem} onPress={onLogout}>
+            <Text style={styles.logoutMenuItemText}>{t('logout')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  </Modal>
+);
+
+const LanguagePicker = ({ visible, onClose, language, onSelect, t }) => (
+  <Modal
+    animationType="fade"
+    transparent={true}
+    visible={visible}
+    onRequestClose={onClose}
+  >
+    <TouchableOpacity
+      style={styles.modalOverlay}
+      activeOpacity={1}
+      onPress={onClose}
+    >
+      <View style={styles.languageModal}>
+        <Text style={styles.languageModalTitle}>{t('select_language')}</Text>
+        {SUPPORTED_LANGUAGES.map((lang) => (
+          <TouchableOpacity
+            key={lang.code}
+            style={styles.languageOption}
+            onPress={() => onSelect(lang.code)}
+          >
+            <View>
+              <Text style={styles.languageOptionLabel}>{lang.nativeLabel}</Text>
+              <Text style={styles.languageOptionSubLabel}>{lang.label}</Text>
+            </View>
+            {lang.code === language && (
+              <MaterialIcons name="check" size={20} color="#3B82F6" />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </TouchableOpacity>
+  </Modal>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -663,5 +726,42 @@ const styles = StyleSheet.create({
   langButtonText: {
     color: '#cfe0ee',
     fontWeight: '700'
+  },
+  languageModal: {
+    backgroundColor: '#0f2a3a',
+    borderRadius: 16,
+    marginHorizontal: 32,
+    padding: 20,
+    alignSelf: 'center',
+    marginTop: 'auto',
+    marginBottom: 'auto',
+    width: '80%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  languageModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  languageOptionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  languageOptionSubLabel: {
+    fontSize: 13,
+    color: '#cfe0ee',
+    marginTop: 2,
   },
 });
