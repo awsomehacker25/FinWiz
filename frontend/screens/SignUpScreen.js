@@ -65,13 +65,19 @@ export default function SignUpScreen({ navigation }) {
         uid: credential.user.uid,
       };
       await login(userData);
-      // Upsert initial profile
-      await upsertUserProfile({
-        id: formData.email, // Use email as unique id for now
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      });
+      // Upsert initial profile. ProfileSetupScreen upserts again (with merge)
+      // after every step, so a failure here isn't fatal to onboarding.
+      try {
+        await upsertUserProfile({
+          id: formData.email, // Use email as unique id for now
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        });
+      } catch (profileError) {
+        console.warn('Failed to create initial profile:', profileError.message);
+      }
+      navigation.replace('ProfileSetup');
     } catch (error) {
       Alert.alert('Error', firebaseAuthErrorMessage(error));
     } finally {
