@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView,
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
 import { getUserProfileByEmail } from '../services/api';
 import SpeechTextInput from '../components/SpeechTextInput';
 
@@ -51,31 +53,36 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // Fetch user profile by email
+      // Firebase Authentication verifies the credentials and issues the ID
+      // token the backend uses to authorize subsequent API calls.
+      await signInWithEmailAndPassword(auth, email, password);
+      // Fetch app-specific profile data (name, onboarding status, etc.)
       const userProfile = await getUserProfileByEmail(email);
       if (!userProfile) {
-        Alert.alert('Login Failed', 'No account found with this email.');
+        Alert.alert('Login Failed', 'No profile found for this account.');
         setLoading(false);
         return;
       }
-      if (!userProfile.password) {
-        Alert.alert('Login Failed', 'This account does not have a password set.');
-        setLoading(false);
-        return;
-      }
-      if (userProfile.password !== password) {
-        Alert.alert('Login Failed', 'Incorrect password.');
-        setLoading(false);
-        return;
-      }
-      // Remove password before storing in context
-      const { password: _pw, ...userData } = userProfile;
-      await login(userData);
+      await login(userProfile);
       navigation.replace('Home');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to login');
+      Alert.alert('Login Failed', firebaseAuthErrorMessage(error));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const firebaseAuthErrorMessage = (error) => {
+    switch (error.code) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+        return 'Incorrect email or password.';
+      case 'auth/user-not-found':
+        return 'No account found with this email.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      default:
+        return error.message || 'Failed to login';
     }
   };
 

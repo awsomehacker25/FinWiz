@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.token.email == userId;
+    }
+
+    // Doc ID is the user's email.
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Doc ID is the user's email.
+    match /lessonCompletions/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /incomeEntries/{entryId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /spendingEntries/{entryId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /savingsGoals/{goalId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Threads are readable by any signed-in user; only the creator can
+    // edit/delete their own thread. Replies live in a subcollection so
+    // per-reply ownership can be enforced the same way.
+    match /communityThreads/{threadId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(request.resource.data.userId);
+      allow update, delete: if isOwner(resource.data.userId);
+
+      match /replies/{replyId} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(request.resource.data.userId);
+        allow update, delete: if isOwner(resource.data.userId);
+      }
+    }
+  }
+}

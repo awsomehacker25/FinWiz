@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
-import api from '../services/api';
+import { getSavingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import SpeechTextInput from '../components/SpeechTextInput';
@@ -40,8 +40,7 @@ export default function SavingsGoalsScreen() {
   const loadGoals = async () => {
     if (user) {
       try {
-        const res = await api.get(`/goals?userId=${user.id}`);
-        const data = Array.isArray(res?.data) ? res.data : [];
+        const data = await getSavingsGoals(user.id);
         const processedGoals = data
           .map(processGoalData)
           .filter(goal => goal.id && goal.goalName);
@@ -70,7 +69,7 @@ export default function SavingsGoalsScreen() {
     });
    
     try {
-      await api.post('/goals', newGoal);
+      await addSavingsGoal(newGoal);
       setGoals(prevGoals => [newGoal, ...prevGoals]);
       resetForm();
     } catch (err) {
@@ -112,7 +111,7 @@ export default function SavingsGoalsScreen() {
     };
  
     try {
-      await api.put(`/goals?id=${editingGoal.id}`, updatedGoal);
+      await updateSavingsGoal(editingGoal.id, updatedGoal);
       setGoals(prevGoals =>
         prevGoals.map(goal =>
           goal.id === editingGoal.id ? updatedGoal : goal
@@ -137,7 +136,7 @@ export default function SavingsGoalsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/goals?id=${goal.id}`);
+              await deleteSavingsGoal(goal.id);
               setGoals(prevGoals =>
                 prevGoals.filter(g => g.id !== goal.id)
               );

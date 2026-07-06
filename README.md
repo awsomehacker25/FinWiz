@@ -1,6 +1,6 @@
 # FinWiz
 
-A Wealth Management App for immigrants and gig workers, built with React Native (Expo) and Azure backend (Functions, Cosmos DB, Notification Hubs).
+A Wealth Management App for immigrants and gig workers, built with React Native (Expo) and Firebase (Authentication, Firestore, Cloud Storage). The app talks to Firebase directly from the client — there is no custom backend.
 
 ## Prerequisites
 
@@ -12,26 +12,27 @@ Before you begin, make sure you have the following installed:
 
 ## Features
 - User profile & customization (income, visa, goals, region, language)
-- Secure authentication (Azure AD B2C)
+- Secure authentication (Firebase Authentication)
 - Income tracker (manual, voice, gig platform integration)
 - Goal-based savings (with AI suggestions)
 - Financial literacy hub (lessons, quizzes, gamification)
 - Support & community (resource map, peer threads, referrals)
-- Push notifications (Azure Notification Hubs)
+- Receipt image storage (Firebase Cloud Storage)
 
 ## Project Structure
 ```
 Finance-AI/
-  frontend/            # React Native (Expo) frontend
+  frontend/            # React Native (Expo) frontend — talks to Firebase directly
     assets/            # Images, fonts, and other static assets
-    context/          # React Context for state management
-    localization/     # i18n translations
-    navigation/       # Navigation configuration
-    screens/          # Application screens/pages
-    services/         # API and other services
-  backend/            # Azure Functions backend
-    api/             # API endpoints
-    shared/          # Shared types and utilities
+    config/            # firebaseConfig.js, OCR/AI endpoint config
+    context/           # React Context for state management (Firebase auth session)
+    localization/      # i18n translations
+    navigation/         # Navigation configuration
+    screens/            # Application screens/pages
+    services/           # Firestore data layer, OCR/AI/storage services
+  ai-model/            # Standalone FastAPI service (Azure OpenAI) for the AI coach
+  firestore.rules       # Firestore security rules (source of truth for authorization)
+  storage.rules         # Cloud Storage security rules
 ```
 
 ## Setup
@@ -43,45 +44,45 @@ cd Finance-AI
 ```
 
 ### 2. Install dependencies
-
-#### Frontend (React Native/Expo)
 ```bash
 cd frontend
 npm install
 ```
 
-#### Backend (Azure Functions)
-```bash
-cd backend
-npm install
-```
+### 3. Create a Firebase project
+- Console → Authentication → enable Email/Password sign-in.
+- Console → Firestore Database → create database → deploy `firestore.rules` (Firestore → Rules → paste the file's contents).
+- Console → Storage → create default bucket → deploy `storage.rules` the same way.
+- Console → Project settings → Your apps → register a Web app to get your `firebaseConfig` values.
 
-### 3. Configure environment variables
-- Copy `.env.example` to `.env` in both frontend and backend directories
-- Fill in your Azure/Firebase/OpenAI keys in the respective .env files
+### 4. Configure environment variables
+Copy `frontend/.env.example` to `frontend/.env` and fill in:
+- Your Firebase web app config (`FIREBASE_*` — from step 3)
+- Azure Cognitive Services OCR/Speech keys (`AZURE_VISION_*`, `AZURE_SPEECH_*` — unrelated to Firebase, used for bill scanning and voice input)
+- `FASTAPI_ENDPOINT` pointing at the `ai-model` service
 
-### 4. Run the application
+For the `ai-model` service, fill in `ai-model/.env` with your Azure OpenAI keys.
 
-#### Frontend (Expo)
+### 5. Run the application
 ```bash
 cd frontend
 npx expo start
 ```
-After starting the frontend:
+After starting:
 - Scan the QR code with your phone's camera (iOS) or Expo Go app (Android)
 - Or press 'w' to open in web browser
 
-#### Backend (Azure Functions)
+If you want the AI Financial Coach / bill-scan features, also run the AI model service:
 ```bash
-cd backend
-npm start
+cd ai-model
+uvicorn main:app --reload --port 8000
 ```
 
 ## Development Tips
 - The frontend runs on Expo, which provides hot-reloading for faster development
 - Use the Expo Go app on your mobile device to test the app in a real environment
-- Azure Functions can be tested locally using the Azure Functions Core Tools
-- Check console logs in Expo and Azure Functions for debugging
+- Check the Firestore/Storage tabs in the Firebase Console to inspect data directly while developing
+- If a write silently fails, check `firestore.rules`/`storage.rules` first — the client SDK surfaces permission errors, but they're easy to miss in a `.catch(() => [])` fallback
 
 ## Troubleshooting
 - If you encounter "port already in use" errors, make sure no other instances are running
@@ -94,6 +95,4 @@ npm start
   ```
 
 ## More Information
-- For detailed API documentation, check the backend README
-- For UI components and screens documentation, see the frontend README
 - Make sure to replace all placeholder values in `.env` files before deploying

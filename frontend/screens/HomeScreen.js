@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated, StatusBar } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
-import api, { getLiteracyProgress } from '../services/api';
+import { getIncomeEntries, getSpendingEntries, getSavingsGoals, getLiteracyProgress, getCommunityThreads } from '../services/api';
 import AIChatModal from '../components/AIChatModal';
 import { useTranslation } from 'react-i18next';
 import i18n, { setAppLanguage, getAppLanguage } from '../localization/i18n';
@@ -48,29 +48,26 @@ export default function HomeScreen({ navigation }) {
   const loadSummaryData = async () => {
     if (user) {
       try {
-        const [incomeRes, spendingRes, goalsRes, literacyProgress, communityRes] = await Promise.all([
-          api.get(`/income?userId=${user.id}`),
-          api.get(`/spending?userId=${user.id}`),
-          api.get(`/goals?userId=${user.id}`),
+        const [incomeData, spendingData, goals, literacyProgress, communityThreads] = await Promise.all([
+          getIncomeEntries(user.id),
+          getSpendingEntries(user.id),
+          getSavingsGoals(user.id),
           getLiteracyProgress(user.email || user.id),
-          api.get('/community')
+          getCommunityThreads()
         ]);
 
         // Handle income calculation with null checks
-        const incomeData = Array.isArray(incomeRes?.data) ? incomeRes.data : [];
-        const totalIncome = incomeData.reduce((sum, entry) => 
+        const totalIncome = incomeData.reduce((sum, entry) =>
           sum + (Number(entry?.amount) || 0), 0
         );
 
         // Handle spending calculation with null checks
-        const spendingData = Array.isArray(spendingRes?.data) ? spendingRes.data : [];
-        const totalSpending = spendingData.reduce((sum, entry) => 
+        const totalSpending = spendingData.reduce((sum, entry) =>
           sum + (Number(entry?.amount) || 0), 0
         );
 
         // Handle goals calculation with null checks
-        const goals = Array.isArray(goalsRes?.data) ? goalsRes.data : [];
-        const goalProgress = goals.length > 0 
+        const goalProgress = goals.length > 0
           ? goals.reduce((sum, goal) => {
               const target = Number(goal?.target) || 0;
               const saved = Number(goal?.saved) || 0;
@@ -89,7 +86,7 @@ export default function HomeScreen({ navigation }) {
           totalSpending: totalSpending,
           goalProgress: Math.min(goalProgress * 100, 100), // Cap at 100%
           lessonsCompleted,
-          communityThreads: Array.isArray(communityRes?.data) ? communityRes.data.length : 0
+          communityThreads: Array.isArray(communityThreads) ? communityThreads.length : 0
         });
       } catch (err) {
         console.error('Error loading summary:', err);

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import api, { getIncomeEntries, getSavingsGoals, getLiteracyProgress, getUserProfileByEmail, getSpendingEntries } from './api';
+import { getIncomeEntries, getSavingsGoals, getLiteracyProgress, getUserProfileByEmail, getSpendingEntries } from './api';
 import { AI_CONFIG } from '../config/aiConfig';
 
 // Function to gather user behavior data from backend

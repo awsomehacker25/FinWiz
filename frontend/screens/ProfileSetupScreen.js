@@ -99,7 +99,6 @@ const ProfileSetupScreen = ({ navigation }) => {
           email: user?.email,
           firstName: user?.firstName,
           lastName: user?.lastName,
-          password: user?.password || profile.password, // Store password if available
           ...profile
         });
       } catch (e) {
@@ -121,7 +120,6 @@ const ProfileSetupScreen = ({ navigation }) => {
         email: user?.email,
         firstName: user?.firstName,
         lastName: user?.lastName,
-        password: user?.password || profile.password, // Store password if available
         ...profile
       });
       // Update user context to mark profile as complete

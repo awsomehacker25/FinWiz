@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { BarChart, PieChart, LineChart } from 'react-native-chart-kit';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Svg, Rect, Text as SvgText, G, Line } from 'react-native-svg';
-import api, { getLiteracyProgress } from '../services/api';
+import { getIncomeEntries, getSpendingEntries, getSavingsGoals, getLiteracyProgress, getCommunityThreads } from '../services/api';
 import { useTranslation } from 'react-i18next';
 
 const screenWidth = Dimensions.get('window').width;
@@ -30,20 +30,20 @@ export default function DataDashboardScreen({ navigation }) {
 
     try {
       setLoading(true);
-      const [incomeRes, spendingRes, goalsRes, literacyRes, communityRes] = await Promise.all([
-        api.get(`/income?userId=${user.id}`),
-        api.get(`/spending?userId=${user.id}`),
-        api.get(`/goals?userId=${user.id}`),
+      const [income, spending, goals, literacyRes, community] = await Promise.all([
+        getIncomeEntries(user.id),
+        getSpendingEntries(user.id),
+        getSavingsGoals(user.id),
         getLiteracyProgress(user.email || user.id),
-        api.get('/community')
+        getCommunityThreads()
       ]);
 
       setDashboardData({
-        income: Array.isArray(incomeRes?.data) ? incomeRes.data : [],
-        spending: Array.isArray(spendingRes?.data) ? spendingRes.data : [],
-        goals: Array.isArray(goalsRes?.data) ? goalsRes.data : [],
+        income: Array.isArray(income) ? income : [],
+        spending: Array.isArray(spending) ? spending : [],
+        goals: Array.isArray(goals) ? goals : [],
         literacy: literacyRes || { lessons: {} },
-        community: Array.isArray(communityRes?.data) ? communityRes.data : []
+        community: Array.isArray(community) ? community : []
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);

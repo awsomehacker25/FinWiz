@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, ScrollView,
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
 import { upsertUserProfile } from '../services/api';
 import SpeechTextInput from '../components/SpeechTextInput';
 
@@ -52,14 +54,15 @@ export default function SignUpScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // TODO: Integrate with Azure AD B2C for actual registration
-      // For now, we'll simulate a successful registration
+      // Firebase Authentication owns the credential; we never store the
+      // password ourselves.
+      const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const userData = {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
         isNewUser: true, // Flag to indicate this is a new user
-        password: formData.password, // Store password in user context
+        uid: credential.user.uid,
       };
       await login(userData);
       // Upsert initial profile
@@ -68,12 +71,24 @@ export default function SignUpScreen({ navigation }) {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        password: formData.password // Store password in user profile
       });
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to create account');
+      Alert.alert('Error', firebaseAuthErrorMessage(error));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const firebaseAuthErrorMessage = (error) => {
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        return 'An account with this email already exists.';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.';
+      case 'auth/weak-password':
+        return 'Password is too weak. Please choose a stronger password.';
+      default:
+        return error.message || 'Failed to create account';
     }
   };
 

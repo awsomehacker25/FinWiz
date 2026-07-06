@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import api, { editReply, deleteReply } from '../services/api';
+import { getCommunityThreads, createThread, updateThread, deleteThread, addReply as addReplyApi, editReply, deleteReply } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -38,8 +38,7 @@ export default function SupportCommunityScreen() {
 
   const loadThreads = async () => {
     try {
-      const res = await api.get('/community');
-      const data = Array.isArray(res?.data) ? res.data : [];
+      const data = await getCommunityThreads();
       const processedThreads = data
         .map(processThreadData)
         .filter(thread => thread.id && thread.title);
@@ -60,8 +59,7 @@ export default function SupportCommunityScreen() {
       replies: [],
     };
     try {
-      const res = await api.post('/community', newThread);
-      const created = res.data?.thread || newThread;
+      const created = await createThread(newThread);
       setThreads(prevThreads => [processThreadData(created), ...prevThreads]);
       resetForm();
     } catch (err) {
@@ -84,7 +82,7 @@ export default function SupportCommunityScreen() {
     setEditingThread(null);
   };
 
-  const updateThread = async () => {
+  const handleUpdateThread = async () => {
     if (!editingThread || !title || !body) return;
     const updatedThread = {
       id: editingThread.id,
@@ -93,11 +91,10 @@ export default function SupportCommunityScreen() {
       body: body.trim(),
     };
     try {
-      const res = await api.put('/community', updatedThread);
-      const updated = res.data?.thread || updatedThread;
+      const updated = await updateThread(updatedThread);
       setThreads(prevThreads =>
         prevThreads.map(thread =>
-          thread.id === editingThread.id ? processThreadData(updated) : thread
+          thread.id === editingThread.id ? processThreadData({ ...thread, ...updated }) : thread
         )
       );
       resetForm();
@@ -107,7 +104,7 @@ export default function SupportCommunityScreen() {
     }
   };
 
-  const deleteThread = async (thread) => {
+  const handleDeleteThread = async (thread) => {
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this thread?',
@@ -118,7 +115,7 @@ export default function SupportCommunityScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete('/community', { data: { id: thread.id, userId: user.email } });
+              await deleteThread(thread.id, user.email);
               setThreads(prevThreads =>
                 prevThreads.filter(t => t.id !== thread.id)
               );
@@ -138,12 +135,11 @@ export default function SupportCommunityScreen() {
     if (!replyText || !user) return;
     setReplyLoading(prev => ({ ...prev, [threadId]: true }));
     try {
-      const res = await api.patch('/community', {
+      const reply = await addReplyApi({
         threadId,
         userId: user.email,
         body: replyText,
       });
-      const reply = res.data?.reply;
       setThreads(prevThreads => prevThreads.map(thread => {
         if (thread.id === threadId) {
           return {
@@ -354,7 +350,7 @@ export default function SupportCommunityScreen() {
               <>
                 <TouchableOpacity
                   style={[styles.button, styles.updateButton]}
-                  onPress={updateThread}
+                  onPress={handleUpdateThread}
                 >
                   <Text style={styles.buttonText}>Update</Text>
                 </TouchableOpacity>
@@ -406,7 +402,7 @@ export default function SupportCommunityScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.deleteButton]}
-                      onPress={() => deleteThread(item)}
+                      onPress={() => handleDeleteThread(item)}
                     >
                       <Text style={styles.actionButtonText}>Delete</Text>
                     </TouchableOpacity>

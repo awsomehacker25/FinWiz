@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
-import api from '../services/api';
+import { getIncomeEntries, addIncomeEntry, updateIncomeEntry, deleteIncomeEntry } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import SpeechTextInput from '../components/SpeechTextInput';
@@ -27,8 +27,7 @@ export default function IncomeTrackerScreen() {
   const loadEntries = async () => {
     if (user) {
       try {
-        const res = await api.get(`/income?userId=${user.id}`);
-        const data = Array.isArray(res?.data) ? res.data : [];
+        const data = await getIncomeEntries(user.id);
         const processedEntries = data
           .map(processEntryData)
           .filter(entry => entry.id && entry.source);
@@ -53,7 +52,7 @@ export default function IncomeTrackerScreen() {
       id: String(Date.now())
     });
     try {
-      await api.post('/income', newEntry);
+      await addIncomeEntry(newEntry);
       setEntries(prevEntries => [newEntry, ...prevEntries]);
       setAmount('');
       setSource('');
@@ -86,7 +85,7 @@ export default function IncomeTrackerScreen() {
       source: source.trim(),
     };
     try {
-      await api.put(`/income?id=${editingEntry.id}`, updatedEntry);
+      await updateIncomeEntry(editingEntry.id, updatedEntry);
       setEntries(prevEntries =>
         prevEntries.map(entry =>
           entry.id === editingEntry.id ? updatedEntry : entry
@@ -112,7 +111,7 @@ export default function IncomeTrackerScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/income?id=${entry.id}&userId=${entry.userId}`);
+              await deleteIncomeEntry(entry.id);
               setEntries(prevEntries =>
                 prevEntries.filter(e => e.id !== entry.id)
               );

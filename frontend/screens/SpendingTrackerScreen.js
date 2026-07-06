@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, SafeAreaView, ScrollView, Modal, ActivityIndicator, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
-import api from '../services/api';
+import { getSpendingEntries, addSpendingEntry, updateSpendingEntry, deleteSpendingEntry } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { OCR_CONFIG } from '../config/ocrConfig';
 import BillScanService from '../services/billScanService';
+import { uploadReceiptImage } from '../services/fileStorage';
 import SpeechTextInput from '../components/SpeechTextInput';
 
 export default function SpendingTrackerScreen() {
@@ -17,6 +18,7 @@ export default function SpendingTrackerScreen() {
   const [editingEntry, setEditingEntry] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [showScanOptions, setShowScanOptions] = useState(false);
+  const [receiptImageUrl, setReceiptImageUrl] = useState(null);
   const { user } = useContext(AuthContext);
 
   const processEntryData = (entry) => ({
@@ -25,7 +27,8 @@ export default function SpendingTrackerScreen() {
     amount: Number(entry.amount) || 0,
     category: String(entry.category || ''),
     description: String(entry.description || ''),
-    date: entry.date || new Date().toISOString()
+    date: entry.date || new Date().toISOString(),
+    ...(entry.receiptImageUrl ? { receiptImageUrl: entry.receiptImageUrl } : {})
   });
 
   useEffect(() => {
@@ -35,8 +38,7 @@ export default function SpendingTrackerScreen() {
   const loadEntries = async () => {
     if (user) {
       try {
-        const res = await api.get(`/spending?userId=${user.id}`);
-        const data = Array.isArray(res?.data) ? res.data : [];
+        const data = await getSpendingEntries(user.id);
         const processedEntries = data
           .map(processEntryData)
           .filter(entry => entry.id && entry.category);
@@ -59,14 +61,16 @@ export default function SpendingTrackerScreen() {
       category: category.trim(),
       description: description.trim(),
       date: new Date().toISOString(),
-      id: String(Date.now())
+      id: String(Date.now()),
+      receiptImageUrl
     });
     try {
-      await api.post('/spending', newEntry);
+      await addSpendingEntry(newEntry);
       setEntries(prevEntries => [newEntry, ...prevEntries]);
       setAmount('');
       setCategory('');
       setDescription('');
+      setReceiptImageUrl(null);
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to add entry');
@@ -78,6 +82,7 @@ export default function SpendingTrackerScreen() {
     setAmount(entry.amount.toString());
     setCategory(entry.category);
     setDescription(entry.description || '');
+    setReceiptImageUrl(entry.receiptImageUrl || null);
   };
 
   const cancelEditing = () => {
@@ -85,6 +90,7 @@ export default function SpendingTrackerScreen() {
     setAmount('');
     setCategory('');
     setDescription('');
+    setReceiptImageUrl(null);
   };
 
   const updateEntry = async () => {
@@ -97,9 +103,10 @@ export default function SpendingTrackerScreen() {
       amount: parsedAmount,
       category: category.trim(),
       description: description.trim(),
+      receiptImageUrl,
     };
     try {
-      await api.put(`/spending?id=${editingEntry.id}`, updatedEntry);
+      await updateSpendingEntry(editingEntry.id, updatedEntry);
       setEntries(prevEntries =>
         prevEntries.map(entry =>
           entry.id === editingEntry.id ? updatedEntry : entry
@@ -109,6 +116,7 @@ export default function SpendingTrackerScreen() {
       setAmount('');
       setCategory('');
       setDescription('');
+      setReceiptImageUrl(null);
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to update entry');
@@ -126,7 +134,7 @@ export default function SpendingTrackerScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/spending?id=${entry.id}&userId=${entry.userId}`);
+              await deleteSpendingEntry(entry.id);
               setEntries(prevEntries =>
                 prevEntries.filter(e => e.id !== entry.id)
               );
@@ -216,7 +224,16 @@ export default function SpendingTrackerScreen() {
         setAmount(result.data.amount.toString());
         setCategory(result.data.category);
         setDescription(result.data.description);
-        
+
+        // Persist the receipt image to Cloud Storage so it stays attached
+        // to this entry; scanning still succeeds even if the upload fails.
+        try {
+          const uploadedUrl = await uploadReceiptImage(user.id, imageUri);
+          setReceiptImageUrl(uploadedUrl);
+        } catch (uploadError) {
+          console.warn('Receipt image upload failed:', uploadError.message);
+        }
+
         Alert.alert(
           'Bill Scanned Successfully!',
           result.message + '\n\nThe form has been auto-filled. Please review and submit.'
@@ -454,6 +471,15 @@ export default function SpendingTrackerScreen() {
                       <Text style={styles.descriptionLabel}>Description</Text>
                       <Text style={styles.entryDescription}>{item.description}</Text>
                     </View>
+                  ) : null}
+                  {item.receiptImageUrl ? (
+                    <TouchableOpacity
+                      style={styles.receiptLink}
+                      onPress={() => Linking.openURL(item.receiptImageUrl)}
+                    >
+                      <MaterialIcons name="receipt" size={16} color="#3B82F6" />
+                      <Text style={styles.receiptLinkText}>View Receipt</Text>
+                    </TouchableOpacity>
                   ) : null}
                 </View>
               )}
@@ -783,6 +809,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#ffffff',
     lineHeight: 22,
+  },
+  receiptLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#2a5f7b',
+  },
+  receiptLinkText: {
+    fontSize: 14,
+    color: '#3B82F6',
+    fontWeight: '600',
   },
   // Modal Styles
   modalOverlay: {
