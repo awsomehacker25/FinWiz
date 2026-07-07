@@ -2,10 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Animated, StatusBar } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig';
 import { getIncomeEntries, getSpendingEntries, getSavingsGoals, getLiteracyProgress, getCommunityThreads } from '../services/api';
 import AIChatModal from '../components/AIChatModal';
+import AccountSecurityModal from '../components/AccountSecurityModal';
 import { useTranslation } from 'react-i18next';
 import i18n, { setAppLanguage, getAppLanguage, SUPPORTED_LANGUAGES } from '../localization/i18n';
 
@@ -21,6 +20,7 @@ export default function HomeScreen({ navigation }) {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [aiChatVisible, setAiChatVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [accountSecurityModalVisible, setAccountSecurityModalVisible] = useState(false);
   const { t } = useTranslation();
   const [language, setLanguage] = useState(i18n.language || 'en');
 
@@ -130,25 +130,14 @@ export default function HomeScreen({ navigation }) {
 
   const handleAccountSecurity = () => {
     setProfileModalVisible(false);
-    if (!user?.email) return;
-    Alert.alert(
-      t('account_security'),
-      `Send a password reset link to ${user.email}?`,
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: 'Send Email',
-          onPress: async () => {
-            try {
-              await sendPasswordResetEmail(auth, user.email);
-              Alert.alert('Email Sent', 'Check your inbox for a link to reset your password.');
-            } catch (err) {
-              Alert.alert('Error', err.message || 'Failed to send password reset email.');
-            }
-          },
-        },
-      ]
-    );
+    setAccountSecurityModalVisible(true);
+  };
+
+  const handleAccountDeleted = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
 
   const handleHelpSupport = () => {
@@ -257,7 +246,13 @@ export default function HomeScreen({ navigation }) {
           onSelect={selectLanguage}
           t={t}
         />
- 
+        <AccountSecurityModal
+          visible={accountSecurityModalVisible}
+          onClose={() => setAccountSecurityModalVisible(false)}
+          user={user}
+          onAccountDeleted={handleAccountDeleted}
+        />
+
         <View style={styles.dashboardSection}>
           <Text style={styles.sectionTitle}>{t('financial_overview')}</Text>
           <View style={styles.grid}>

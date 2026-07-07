@@ -173,3 +173,19 @@ export async function deleteReply({ threadId, replyId, userId }) {
   if (snap.data().userId !== userId) throw new Error('Not authorized to delete this reply');
   await deleteDoc(ref);
 }
+
+// ---------- Account deletion ----------
+// Best-effort wipe of everything keyed to this user by email. Doesn't reach
+// this user's replies left on OTHER people's threads (would need a
+// collectionGroup query + a dedicated Firestore index) or the receipts
+// folder in Storage — acceptable gaps for a first pass since the account
+// itself (and therefore the ability to see any of it) is gone either way.
+export async function deleteAllUserData(email) {
+  const fieldKeyedCollections = ['incomeEntries', 'spendingEntries', 'savingsGoals', 'communityThreads'];
+  for (const collectionId of fieldKeyedCollections) {
+    const snap = await getDocs(query(collection(db, collectionId), where('userId', '==', email)));
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+  }
+  await deleteDoc(doc(db, 'userProfiles', email)).catch(() => {});
+  await deleteDoc(doc(db, 'lessonCompletions', email)).catch(() => {});
+}
