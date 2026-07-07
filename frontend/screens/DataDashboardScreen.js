@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator, SafeAreaView } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { BarChart, PieChart, LineChart } from 'react-native-chart-kit';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -324,10 +324,10 @@ export default function DataDashboardScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Loading dashboard...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -336,7 +336,8 @@ export default function DataDashboardScreen({ navigation }) {
   const savingsGoals = getSavingsProgress();
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Financial Dashboard</Text>
         <Text style={styles.headerSubtitle}>Your financial overview at a glance</Text>
@@ -482,6 +483,7 @@ export default function DataDashboardScreen({ navigation }) {
 
       <View style={styles.bottomSpacer} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -489,6 +491,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#17384a',
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+    paddingTop: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -502,16 +509,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 32,
-    backgroundColor: '#17384a',
+    marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#FFFFFF',
-    letterSpacing: 0.5,
     marginBottom: 8,
   },
   headerSubtitle: {
@@ -519,7 +522,6 @@ const styles = StyleSheet.create({
     color: '#B0BEC5',
   },
   section: {
-    paddingHorizontal: 24,
     marginBottom: 32,
   },
   sectionTitle: {

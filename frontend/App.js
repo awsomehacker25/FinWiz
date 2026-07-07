@@ -90,15 +90,15 @@ export default function App() {
               component={SupportCommunityScreen}
               options={{ headerTitle: '' }}
             />
-            <Stack.Screen 
-              name="DataDashboard" 
+            <Stack.Screen
+              name="DataDashboard"
               component={DataDashboardScreen}
-              options={{ headerTitle: 'Financial Dashboard' }}
+              options={{ headerTitle: '' }}
             />
-            <Stack.Screen 
-              name="FinancialInstitutions" 
+            <Stack.Screen
+              name="FinancialInstitutions"
               component={FinancialInstitutionsScreen}
-              options={{ headerTitle: 'Financial Institutions' }}
+              options={{ headerTitle: '' }}
             />
           </Stack.Navigator>
         </NavigationContainer>
